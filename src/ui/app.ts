@@ -19,7 +19,7 @@ import {
 import { selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
-import { getLang, loadLang, setLang, getTips, loadTips, setTips, t, type Lang } from "./i18n";
+import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, t, type Lang } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
 import { loadSave, saveGame } from "./persist";
 
@@ -41,6 +41,16 @@ let flyDraw: { seat: number; tile: Tile | null; key: number } | null = null;
 let flyKey = 0;
 
 let saveTimer: number | null = null;
+let autoTimer: number | null = null;
+let autoToken = 0;
+
+function clearAutoTimer(): void {
+  if (autoTimer !== null) {
+    window.clearTimeout(autoTimer);
+    autoTimer = null;
+  }
+  autoToken += 1;
+}
 
 function scheduleSave(): void {
   if (saveTimer !== null) window.clearTimeout(saveTimer);
@@ -94,14 +104,19 @@ const DEAL_ORDER = [0, 3, 2, 1] as const;
 
 const WIND_KIND: Record<Wind, string> = { E: "we", S: "ws", W: "ww", N: "wn" };
 
-function tipDiscardId(): number | null {
-  if (!getTips()) return null;
+function tipDiscardTile(): Tile | null {
   if (dealReveal || busy) return null;
   if (state.phase !== "discard" || state.current !== 0) return null;
   const p = state.players[0]!;
   if (!p.hand.length) return null;
-  const tip = chooseTipDiscard(p, WIND_KIND[p.seat], WIND_KIND[state.roundWind]);
-  return tip.id;
+  return chooseTipDiscard(p, WIND_KIND[p.seat], WIND_KIND[state.roundWind]);
+}
+
+function tipDiscardId(): number | null {
+  // Highlight only when Tips ON; Auto follows tip engine even if highlight is off.
+  if (!getTips()) return null;
+  const tip = tipDiscardTile();
+  return tip ? tip.id : null;
 }
 
 function tileEl(
@@ -237,19 +252,21 @@ function visualWallCount(): number {
 }
 
 function wallSideHtml(count: number, side: string): string {
-  // Each stack = 2 tiles high; schematic compact wall
+  // Two-high stacks with clean spacing (no overlapping neighbors).
   const stacks = Math.ceil(count / 2);
-  const maxShow = 18;
+  const maxShow = 14;
   const show = Math.min(stacks, maxShow);
   const items: string[] = [];
   for (let s = 0; s < show; s++) {
     const rem = Math.max(0, count - s * 2);
     const n = Math.min(2, rem);
     if (n <= 0) break;
-    const layers = Array.from({ length: n }, () => `<span class="tile back wall-tile"></span>`).join("");
-    items.push(`<div class="wall-stack">${layers}</div>`);
+    const layers = Array.from({ length: n }, (_, i) =>
+      `<span class="tile back wall-tile layer-${i}"></span>`,
+    ).join("");
+    items.push(`<div class="wall-stack h-${n}">${layers}</div>`);
   }
-  return `<div class="wall-side wall-${side}">${items.join("")}</div>`;
+  return `<div class="wall-side wall-${side}" style="--stacks:${show}">${items.join("")}</div>`;
 }
 
 function tileWallHtml(): string {
@@ -365,14 +382,14 @@ function shopOverlay(): string {
     <div class="shop-stage">
       <div class="shop-char-full you">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/player-full.png?v=tall1" alt="${t("seatYou")}" draggable="false" />
+          <img class="shop-full" src="chars/player-full.png?v=cut2" alt="${t("seatYou")}" draggable="false" />
           ${handProp(0, true)}
         </div>
         <span class="shop-char-label">${t("seatYou")}</span>
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/opposite-full.png?v=tall1" alt="${t("seatOpp")}" draggable="false" />
+          <img class="shop-full" src="chars/opposite-full.png?v=cut2" alt="${t("seatOpp")}" draggable="false" />
           ${handProp(2, true)}
         </div>
         <span class="shop-char-label">${t("seatOpp")}</span>
@@ -481,8 +498,10 @@ function langToggle(): string {
 
 function tipsToggle(): string {
   const on = getTips();
+  const auto = getAutoTips();
   return `<div class="tips-toggle dock-tips" role="group" aria-label="AI tips">
     <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}">${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}</button>
+    <button type="button" class="act auto-act ${auto ? "on" : ""}" data-act="auto-tips" data-on="${auto ? "0" : "1"}">${t("auto")} · ${auto ? t("autoOn") : t("autoOff")}</button>
   </div>`;
 }
 
@@ -508,6 +527,7 @@ export function render(): void {
       </header>
       ${shopOverlay()}
     `;
+    clearAutoTimer();
     return;
   }
 
@@ -552,6 +572,7 @@ export function render(): void {
     </div>
     ${overlay()}
   `;
+  scheduleAutoPlay();
 }
 
 async function animateDeal(my: number): Promise<void> {
@@ -632,6 +653,7 @@ async function continuePlay(): Promise<void> {
 }
 
 async function afterMove(): Promise<void> {
+  clearAutoTimer();
   busy = true;
   render();
   await continuePlay();
@@ -639,6 +661,7 @@ async function afterMove(): Promise<void> {
 
 async function startDealAnimation(): Promise<void> {
   const my = gen;
+  clearAutoTimer();
   busy = true;
   await animateDeal(my);
   if (my !== gen) return;
@@ -646,6 +669,86 @@ async function startDealAnimation(): Promise<void> {
   scheduleSave();
   render();
   // East discard phase — human to play; no auto-continue needed
+}
+
+function pickAutoClaim(): Claim | "pass" {
+  const claims = state.pendingHumanClaims;
+  const win = claims.find((c) => c.type === "win");
+  if (win) return win;
+  const kong = claims.find((c) => c.type === "kong");
+  if (kong) return kong;
+  const pung = claims.find((c) => c.type === "pung");
+  if (pung) return pung;
+  const chows = claims.filter((c) => c.type === "chow");
+  if (chows.length) {
+    // Prefer a chow — tip-aligned: any available chow counts as useful for 开门 / shape.
+    return chows[0]!;
+  }
+  return "pass";
+}
+
+function applyAutoClaim(c: Claim): void {
+  humanClaim(state, c);
+  if (c.type === "win") sfx.win();
+  else sfx.claim();
+  selected = null;
+  scheduleSave();
+  if (c.type === "win") render();
+  else void afterMove();
+}
+
+function scheduleAutoPlay(): void {
+  clearAutoTimer();
+  if (!getAutoTips()) return;
+  if (busy || dealReveal || shopOpen) return;
+  if (state.phase === "bet" || state.phase === "over") return;
+
+  const delay = 400 + Math.floor(Math.random() * 301);
+  const token = autoToken;
+
+  if (state.phase === "discard" && state.current === 0) {
+    autoTimer = window.setTimeout(() => {
+      autoTimer = null;
+      if (token !== autoToken) return;
+      if (!getAutoTips() || busy || dealReveal || shopOpen) return;
+      if (state.phase !== "discard" || state.current !== 0) return;
+
+      if (canSelfWin(state, 0)) {
+        if (declareSelfWin(state, 0)) sfx.win();
+        scheduleSave();
+        render();
+        return;
+      }
+
+      const tip = tipDiscardTile();
+      if (!tip) return;
+      selected = null;
+      applyDiscard(state, tip.id);
+      sfx.discard();
+      scheduleSave();
+      void afterMove();
+    }, delay);
+    return;
+  }
+
+  if (state.phase === "claim" && state.pendingHumanClaims.length) {
+    autoTimer = window.setTimeout(() => {
+      autoTimer = null;
+      if (token !== autoToken) return;
+      if (!getAutoTips() || busy || dealReveal || shopOpen) return;
+      if (state.phase !== "claim" || !state.pendingHumanClaims.length) return;
+
+      const pick = pickAutoClaim();
+      if (pick === "pass") {
+        humanPass(state);
+        sfx.click();
+        scheduleSave();
+        void afterMove();
+        return;
+      }
+      applyAutoClaim(pick);
+    }, delay);
+  }
 }
 
 function findClaim(type: Claim["type"], a?: number, b?: number): Claim | undefined {
@@ -691,6 +794,7 @@ function buyProp(id: ShopPropId): void {
 
 function goNext(): void {
   gen += 1;
+  clearAutoTimer();
   shopOpen = false;
   dealReveal = null;
   flyDraw = null;
@@ -706,6 +810,7 @@ function goNext(): void {
 
 function goReset(): void {
   gen += 1;
+  clearAutoTimer();
   shopOpen = false;
   dealReveal = null;
   flyDraw = null;
@@ -735,6 +840,12 @@ function onClick(ev: Event): void {
   }
   if (act === "tips") {
     setTips(el.dataset.on === "1");
+    sfx.click();
+    render();
+    return;
+  }
+  if (act === "auto-tips") {
+    setAutoTips(el.dataset.on === "1");
     sfx.click();
     render();
     return;
@@ -790,12 +901,13 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips")
+  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips")
     return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips") return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips") return;
 
   if (act === "select") {
+    clearAutoTimer();
     if (state.phase !== "discard" || state.current !== 0 || dealReveal) return;
     const id = Number(el.dataset.id);
     if (!state.players[0]!.hand.some((x) => x.id === id)) return;
@@ -812,6 +924,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "discard") {
+    clearAutoTimer();
     if (selected === null || state.phase !== "discard" || state.current !== 0) return;
     const id = selected;
     selected = null;
@@ -822,12 +935,14 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "self-win") {
+    clearAutoTimer();
     if (declareSelfWin(state, 0)) sfx.win();
     scheduleSave();
     render();
     return;
   }
   if (act === "self-kong") {
+    clearAutoTimer();
     const kind = el.dataset.kind!;
     const mode = el.dataset.mode as "concealed" | "added";
     if (declareKong(state, kind, mode)) {
@@ -839,6 +954,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "pass") {
+    clearAutoTimer();
     humanPass(state);
     sfx.click();
     scheduleSave();
@@ -846,6 +962,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "claim-win") {
+    clearAutoTimer();
     const c = findClaim("win");
     if (c) {
       humanClaim(state, c);
@@ -856,6 +973,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "claim-pung") {
+    clearAutoTimer();
     const c = findClaim("pung");
     if (c) {
       humanClaim(state, c);
@@ -867,6 +985,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "claim-kong") {
+    clearAutoTimer();
     const c = findClaim("kong");
     if (c) {
       humanClaim(state, c);
@@ -878,6 +997,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "claim-chow") {
+    clearAutoTimer();
     const c = findClaim("chow", Number(el.dataset.a), Number(el.dataset.b));
     if (c) {
       humanClaim(state, c);
@@ -895,6 +1015,7 @@ function onDblClick(ev: Event): void {
   if (state.phase !== "discard" || state.current !== 0) return;
   const id = Number(el.dataset.id);
   if (!state.players[0]!.hand.some((x) => x.id === id)) return;
+  clearAutoTimer();
   selected = null;
   applyDiscard(state, id);
   sfx.discard();
@@ -907,11 +1028,13 @@ export function start(el: HTMLElement): void {
   loadMute();
   loadLang();
   loadTips();
+  loadAutoTips();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);
   window.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && selected !== null && !busy && !dealReveal && state.phase === "discard" && state.current === 0) {
+      clearAutoTimer();
       const id = selected;
       selected = null;
       applyDiscard(state, id);

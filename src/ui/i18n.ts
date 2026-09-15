@@ -78,6 +78,9 @@ const dict = {
   tips: { zh: "提示", en: "Tips" },
   tipsOn: { zh: "开", en: "ON" },
   tipsOff: { zh: "关", en: "OFF" },
+  auto: { zh: "自动", en: "Auto" },
+  autoOn: { zh: "开", en: "ON" },
+  autoOff: { zh: "关", en: "OFF" },
 } as const;
 
 export type I18nKey = keyof typeof dict;
@@ -140,6 +143,33 @@ export function setTips(next: boolean): void {
   tipsOn = next;
   try {
     localStorage.setItem(TIPS_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+const AUTO_TIPS_KEY = "aa-mahjong-auto-tips";
+let autoTipsOn = false;
+
+export function loadAutoTips(): boolean {
+  try {
+    const v = localStorage.getItem(AUTO_TIPS_KEY);
+    if (v === "1" || v === "true" || v === "on") autoTipsOn = true;
+    else if (v === "0" || v === "false" || v === "off") autoTipsOn = false;
+  } catch {
+    /* ignore */
+  }
+  return autoTipsOn;
+}
+
+export function getAutoTips(): boolean {
+  return autoTipsOn;
+}
+
+export function setAutoTips(next: boolean): void {
+  autoTipsOn = next;
+  try {
+    localStorage.setItem(AUTO_TIPS_KEY, next ? "1" : "0");
   } catch {
     /* ignore */
   }
