@@ -1,5 +1,5 @@
 import type { Claim, GameState, Player, Tile } from "../game/types";
-import { tileLabel, sortTiles, WIND_ZH, WIND_EN } from "../game/tiles";
+import { sortTiles, WIND_ZH, WIND_EN } from "../game/tiles";
 import {
   applyDiscard,
   aiPlayDiscard,
@@ -18,6 +18,8 @@ import {
 } from "../game/engine";
 import { dongbeiFlags, selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
+import { tileFaceSvg, tileCssClass } from "./tileFace";
+import { getLang, loadLang, setLang, t, type Lang } from "./i18n";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,6 +31,12 @@ let betDraft = 10;
 let root: HTMLElement;
 let shopOpen = false;
 let shopFlash = "";
+
+/** UI-only dealing: how many tiles revealed per seat (engine already dealt). */
+let dealReveal: [number, number, number, number] | null = null;
+/** Flying draw overlay */
+let flyDraw: { seat: number; tile: Tile | null; key: number } | null = null;
+let flyKey = 0;
 
 type ShopPropId = "coffee" | "cigarette" | "beer";
 interface ShopItem {
@@ -61,34 +69,50 @@ const SEAT_AVATAR = [
   "avatars/left.png",
 ] as const;
 
+/** Counter-clockwise from East: E(0) → N(3) → W(2) → S(1) */
+const DEAL_ORDER = [0, 3, 2, 1] as const;
+
 function tileEl(
   tile: Tile,
-  opts: { size?: "hand" | "mini"; selected?: boolean; last?: boolean; back?: boolean; drawn?: boolean } = {},
+  opts: {
+    size?: "hand" | "mini" | "wall";
+    selected?: boolean;
+    last?: boolean;
+    back?: boolean;
+    drawn?: boolean;
+    arriving?: boolean;
+    toss?: boolean;
+  } = {},
 ): string {
-  const l = tileLabel(tile);
+  const css = tileCssClass(tile);
   const honor = tile.suit === "wind" || tile.suit === "dragon";
   const cls = [
     "tile",
-    l.css,
+    css,
     honor ? "honor" : "",
     opts.size === "hand" ? "hand-tile" : "",
+    opts.size === "wall" ? "wall-tile" : "",
     opts.selected ? "selected" : "",
     opts.last ? "last" : "",
     opts.drawn ? "drawn" : "",
     opts.back ? "back" : "",
+    opts.arriving ? "arriving" : "",
+    opts.toss ? "toss" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  const sub = l.sub ? `<span class="sub">${l.sub}</span>` : "";
-  const inner = `<span class="glyph"><span class="main">${l.main}</span>${sub}</span>`;
+  const face = opts.back ? "" : tileFaceSvg(tile);
   if (opts.size === "hand") {
-    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}">${inner}</button>`;
+    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}">${face}</button>`;
   }
-  return `<span class="${cls}" data-id="${tile.id}">${inner}</span>`;
+  return `<span class="${cls}" data-id="${tile.id}">${face}</span>`;
 }
 
-function backs(n: number): string {
-  return Array.from({ length: n }, () => `<span class="tile back"></span>`).join("");
+function backs(n: number, arriving = false): string {
+  return Array.from({ length: n }, (_, i) => {
+    const last = arriving && i === n - 1 ? " arriving" : "";
+    return `<span class="tile back${last}"></span>`;
+  }).join("");
 }
 
 function meldHtml(p: Player): string {
@@ -99,7 +123,7 @@ function meldHtml(p: Player): string {
 
 function riverHtml(p: Player): string {
   const lastId = state.lastDiscard?.id;
-  return p.river.map((t) => tileEl(t, { last: t.id === lastId })).join("");
+  return p.river.map((t) => tileEl(t, { last: t.id === lastId, toss: t.id === lastId })).join("");
 }
 
 function cashChip(p: Player): string {
@@ -131,11 +155,18 @@ function avatarHtml(i: number, active: boolean): string {
   </div>`;
 }
 
+function visibleHandCount(i: number): number {
+  if (!dealReveal) return state.players[i]!.hand.length;
+  return dealReveal[i] ?? 0;
+}
+
 function seatHtml(i: number): string {
   const p = state.players[i]!;
   const pos = SEAT_POS[i]!;
-  const active = state.current === i && state.phase !== "over" && state.phase !== "bet";
+  const active = state.current === i && state.phase !== "over" && state.phase !== "bet" && !dealReveal;
   const act = active ? "active" : "";
+  const nShow = visibleHandCount(i);
+  const aiArriving = !!(flyDraw && flyDraw.seat === i && i !== 0);
   if (i === 0) {
     return `<div class="seat pos-${pos} ${act}">
       <div class="river">${riverHtml(p)}</div>
@@ -144,10 +175,72 @@ function seatHtml(i: number): string {
   }
   return `<div class="seat pos-${pos} ${act}">
     ${avatarHtml(i, active)}
-    <div class="backs">${backs(p.hand.length)}</div>
+    <div class="backs">${backs(nShow, aiArriving)}</div>
     <div class="melds">${meldHtml(p)}</div>
     <div class="river">${riverHtml(p)}</div>
   </div>`;
+}
+
+/** Visual wall count: engine wall + unrevealed dealt tiles during deal animation. */
+function visualWallCount(): number {
+  if (state.phase === "bet") return 0;
+  if (!dealReveal) return state.wall.length;
+  let hidden = 0;
+  for (let i = 0; i < 4; i++) {
+    hidden += Math.max(0, state.players[i]!.hand.length - (dealReveal[i] ?? 0));
+  }
+  return state.wall.length + hidden;
+}
+
+function wallSideHtml(count: number, side: string): string {
+  // Each stack = 2 tiles high; schematic compact wall
+  const stacks = Math.ceil(count / 2);
+  const maxShow = 18;
+  const show = Math.min(stacks, maxShow);
+  const items: string[] = [];
+  for (let s = 0; s < show; s++) {
+    const rem = Math.max(0, count - s * 2);
+    const n = Math.min(2, rem);
+    if (n <= 0) break;
+    const layers = Array.from({ length: n }, () => `<span class="tile back wall-tile"></span>`).join("");
+    items.push(`<div class="wall-stack">${layers}</div>`);
+  }
+  return `<div class="wall-side wall-${side}">${items.join("")}</div>`;
+}
+
+function tileWallHtml(): string {
+  const playing = state.phase !== "bet";
+  if (!playing) {
+    return `<div class="tile-wall empty">
+      <div class="wall-label">${t("betting")}</div>
+    </div>`;
+  }
+  const n = visualWallCount();
+  // Distribute across 4 sides as evenly as possible
+  const base = Math.floor(n / 4);
+  const rem = n % 4;
+  const counts = [0, 1, 2, 3].map((i) => base + (i < rem ? 1 : 0));
+  // Sides: bottom(East-facing), right, top, left — visual only
+  return `<div class="tile-wall" aria-label="${t("wall")} ${n}">
+    ${wallSideHtml(counts[2]!, "top")}
+    ${wallSideHtml(counts[3]!, "left")}
+    ${wallSideHtml(counts[1]!, "right")}
+    ${wallSideHtml(counts[0]!, "bottom")}
+    <div class="wall-hub">
+      <div class="wall-title">${t("dongbei")}</div>
+      <div class="wall-count">${n} ${t("inWall")}</div>
+    </div>
+  </div>`;
+}
+
+function flyOverlay(): string {
+  if (!flyDraw) return "";
+  const pos = SEAT_POS[flyDraw.seat]!;
+  const face =
+    flyDraw.seat === 0 && flyDraw.tile
+      ? tileEl(flyDraw.tile, { size: "hand", drawn: true })
+      : `<span class="tile back hand-tile"></span>`;
+  return `<div class="fly-layer"><div class="fly-tile to-${pos}" data-k="${flyDraw.key}">${face}</div></div>`;
 }
 
 function claimButtons(): string {
@@ -155,38 +248,42 @@ function claimButtons(): string {
   const types = new Set(state.pendingHumanClaims.map((c) => c.type));
   const chows = state.pendingHumanClaims.filter((c) => c.type === "chow");
   const btns: string[] = [];
-  if (types.has("win")) btns.push(`<button class="act win" data-act="claim-win">胡 Win</button>`);
-  if (types.has("kong")) btns.push(`<button class="act kong" data-act="claim-kong">杠 Kong</button>`);
-  if (types.has("pung")) btns.push(`<button class="act pung" data-act="claim-pung">碰 Pung</button>`);
+  if (types.has("win")) btns.push(`<button class="act win" data-act="claim-win">${t("win")}</button>`);
+  if (types.has("kong")) btns.push(`<button class="act kong" data-act="claim-kong">${t("kong")}</button>`);
+  if (types.has("pung")) btns.push(`<button class="act pung" data-act="claim-pung">${t("pung")}</button>`);
   for (const c of chows) {
     const a = c.chow!.tiles[0]!;
     const b = c.chow!.tiles[1]!;
     btns.push(
       `<button class="act chow chow-preview" data-act="claim-chow" data-a="${a.id}" data-b="${b.id}">
-        吃 Chow ${tileEl(a)}${tileEl(b)}
+        ${t("chow")} ${tileEl(a)}${tileEl(b)}
       </button>`,
     );
   }
-  btns.push(`<button class="act pass" data-act="pass">过 Pass</button>`);
+  btns.push(`<button class="act pass" data-act="pass">${t("pass")}</button>`);
   return btns.join("");
 }
 
 function turnButtons(): string {
-  if (state.phase !== "discard" || state.current !== 0 || busy) {
+  if (dealReveal || busy) {
+    if (state.phase === "claim" && !dealReveal) return claimButtons();
+    return "";
+  }
+  if (state.phase !== "discard" || state.current !== 0) {
     if (state.phase === "claim") return claimButtons();
     return "";
   }
   const btns: string[] = [];
-  if (canSelfWin(state, 0)) btns.push(`<button class="act win" data-act="self-win">自摸 Win</button>`);
+  if (canSelfWin(state, 0)) btns.push(`<button class="act win" data-act="self-win">${t("selfWin")}</button>`);
   for (const k of humanKongOptions(state)) {
     btns.push(
-      `<button class="act kong" data-act="self-kong" data-kind="${k.kind}" data-mode="${k.mode}">杠 Kong</button>`,
+      `<button class="act kong" data-act="self-kong" data-kind="${k.kind}" data-mode="${k.mode}">${t("kong")}</button>`,
     );
   }
   btns.push(
-    `<button class="act discard" data-act="discard" ${selected === null ? "disabled" : ""}>打 Discard</button>`,
+    `<button class="act discard" data-act="discard" ${selected === null ? "disabled" : ""}>${t("discard")}</button>`,
   );
-  btns.push(`<button class="act sort" data-act="sort">理牌 Sort</button>`);
+  btns.push(`<button class="act sort" data-act="sort">${t("sort")}</button>`);
   return btns.join("");
 }
 
@@ -195,15 +292,15 @@ function reqHud(): string {
   const f = dongbeiFlags(p.hand, p.melds);
   const keOk = f.hasKe || f.dragonEyes;
   const items = [
-    [f.opened, "开门", "Open"],
-    [keOk, f.hasKe ? "有刻" : "中发白将", "Pung"],
-    [f.yaojiu, "幺九", "1/9"],
-    [f.threeSuits, "三门齐", "3 suits"],
+    [f.opened, t("reqOpen"), "Open"],
+    [keOk, f.hasKe ? t("reqKe") : t("reqDragonEyes"), "Pung"],
+    [f.yaojiu, t("reqYao"), "1/9"],
+    [f.threeSuits, t("reqSuits"), "3 suits"],
   ] as const;
   return `<div class="reqs">${items
     .map(
-      ([ok, zh, en]) =>
-        `<span class="req ${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${zh}<small>${en}</small></span>`,
+      ([ok, zh]) =>
+        `<span class="req ${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${zh}</span>`,
     )
     .join("")}</div>`;
 }
@@ -212,13 +309,13 @@ function payoutLines(): string {
   const w = state.winResult;
   if (!w) return "";
   if (!w.payouts.length) {
-    return `<p class="sub">Stake $${w.stake} · no cash moved (broke or $0 bet).</p>`;
+    return `<p class="sub">Stake $${w.stake} · ${t("noCashMoved")}</p>`;
   }
   const names = state.players.map((p) => p.nameZh);
   const rows = w.payouts
     .map((x) => `<li><span>${names[x.from]} → ${names[x.to]}</span><span class="pts">${formatCash(x.amount)}</span></li>`)
     .join("");
-  const scheme = w.selfDraw ? "自摸：三家各付赌注" : "点炮：放炮者付赌注";
+  const scheme = w.selfDraw ? t("paySelf") : t("payDiscard");
   return `<p class="sub">${scheme} · stake $${w.stake}</p><ul class="fan-list">${rows}</ul>`;
 }
 
@@ -228,42 +325,43 @@ function shopOverlay(): string {
   const flash = shopFlash ? `<p class="shop-flash">${shopFlash}</p>` : "";
   const items = SHOP_ITEMS.map((item) => {
     const can = cash >= item.price;
+    const label = getLang() === "zh" ? `${item.emoji} ${item.nameZh} · ${item.name}` : `${item.emoji} ${item.name} · ${item.nameZh}`;
     return `<div class="shop-item">
       <img class="shop-item-img" src="${item.src}" alt="${item.name}" draggable="false" />
       <div class="shop-item-info">
-        <strong>${item.emoji} ${item.nameZh} · ${item.name}</strong>
-        <span>$${item.price} · both of you hold it briefly</span>
+        <strong>${label}</strong>
+        <span>$${item.price} · ${t("shopBoth")}</span>
       </div>
       <button class="btn shop-buy" data-act="buy-prop" data-item="${item.id}" ${can ? "" : "disabled"}>
-        买 Buy · $${item.price}
+        ${t("buy")} · $${item.price}
       </button>
     </div>`;
   }).join("");
   return `<div class="overlay shop-overlay"><div class="modal shop-modal">
-    <h2>小卖部 · Shop</h2>
-    <p class="sub">共享小卖部 · Shared shop · 钱包 ${formatCash(cash)}</p>
+    <h2>${t("shopTitle")}</h2>
+    <p class="sub">${t("shopSub")} ${formatCash(cash)}</p>
     <div class="shop-chars">
       <div class="shop-char on">
         <div class="avatar-ring shop-ring">
           <img class="avatar" src="avatars/player.png" alt="You" draggable="false" />
           ${handProp(0, true)}
         </div>
-        <span class="avatar-name">你 · YOU</span>
+        <span class="avatar-name">${t("seatYou")}</span>
       </div>
       <div class="shop-char on">
         <div class="avatar-ring shop-ring">
           <img class="avatar" src="avatars/opposite.png?v=buzz2" alt="Opposite" draggable="false" />
           ${handProp(2, true)}
         </div>
-        <span class="avatar-name">对家 · HIM</span>
+        <span class="avatar-name">${t("seatOpp")}</span>
       </div>
     </div>
     <div class="shop-catalog">${items}</div>
     ${flash}
     <div class="modal-actions">
-      <button class="btn ghost" data-act="shop-close">关闭 Close</button>
+      <button class="btn ghost" data-act="shop-close">${t("close")}</button>
     </div>
-    ${cash < 1 ? `<p class="sub">Wallet empty — you can still browse. Win a hand to refill.</p>` : ""}
+    ${cash < 1 ? `<p class="sub">${t("walletEmpty")}</p>` : ""}
   </div></div>`;
 }
 
@@ -280,40 +378,40 @@ function overlay(): string {
           `<button class="bet-chip ${clamped === n ? "on" : ""}" data-act="bet-set" data-n="${n}">$${n}</button>`,
       )
       .join("");
-    const zeroNote =
-      cash === 0
-        ? `<p class="sub">You are at $0 — play on for pride. Win to rebuild the stack.</p>`
-        : `<p class="sub">点炮：放炮者付给赢家赌注。自摸：其余三家各付一份赌注。付不出则倾家。</p>`;
+    const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : `<p class="sub">${t("payNote")}</p>`;
     return `<div class="overlay"><div class="modal">
       <div class="modal-hero"><img class="avatar hero" src="avatars/player.png" alt="You" /></div>
-      <h2>东北麻将</h2>
-      <p class="sub">第 ${state.handNumber} 局 · You have ${formatCash(cash)}</p>
+      <h2>${t("dongbei")}</h2>
+      <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
       <div class="bet-row">${cash === 0 ? `<span class="bet-chip on">$0</span>` : chips}</div>
       ${zeroNote}
-      <p class="rules-mini">胡牌需：开门（吃/碰/明杠）· 有刻（或中发白做将）· 带幺九 · 三门齐</p>
-      <button class="btn" data-act="deal">开局 Deal · ${formatCash(clamped)}</button>
+      <p class="rules-mini">${t("rulesMini")}</p>
+      <button class="btn" data-act="deal">${t("deal")} · ${formatCash(clamped)}</button>
     </div></div>`;
   }
   if (state.phase !== "over") return "";
   if (state.drawGame) {
     return `<div class="overlay"><div class="modal">
-      <h2>荒庄 · Draw</h2>
-      <p class="sub">牌墙摸完，本局赌注不动。</p>
+      <h2>${t("drawGame")}</h2>
+      <p class="sub">${t("drawGameSub")}</p>
       <div class="modal-actions">
-        <button class="btn" data-act="next">下一局 Next</button>
-        <button class="btn ghost" data-act="reset">重置 $100</button>
+        <button class="btn" data-act="next">${t("nextRound")}</button>
+        <button class="btn ghost" data-act="reset">${t("resetCash")}</button>
       </div>
     </div></div>`;
   }
   const w = state.winResult;
   const winner = state.players[state.winner ?? 0]!;
-  const title = state.winner === 0 ? "你胡了 · You win" : `${winner.nameZh} 胡牌`;
-  const how = w?.selfDraw ? "自摸 Self-draw" : `点炮 ${w?.loser != null ? state.players[w.loser]!.nameZh : "?"}`;
+  const title = state.winner === 0 ? t("youWin") : `${winner.nameZh} ${t("someoneWins")}`;
+  const how = w?.selfDraw ? t("selfDrawHow") : `${t("discardWinHow")} ${w?.loser != null ? state.players[w.loser]!.nameZh : "?"}`;
   const lines = (w?.lines ?? [])
-    .map((l) => `<li><span>${l.nameZh} · ${l.name}</span><span class="pts">${l.fan ? l.fan + " 番" : "条件"}</span></li>`)
+    .map((l) => {
+      const name = getLang() === "zh" ? `${l.nameZh} · ${l.name}` : `${l.name} · ${l.nameZh}`;
+      return `<li><span>${name}</span><span class="pts">${l.fan ? l.fan + (getLang() === "zh" ? " 番" : " fan") : "✓"}</span></li>`;
+    })
     .join("");
-  const tiles = sortTiles(w?.concealed ?? []).map((t) => tileEl(t)).join("");
-  const melds = (w?.melds ?? []).map((m) => `<div class="meld">${m.tiles.map((t) => tileEl(t)).join("")}</div>`).join("");
+  const tiles = sortTiles(w?.concealed ?? []).map((tile) => tileEl(tile)).join("");
+  const melds = (w?.melds ?? []).map((m) => `<div class="meld">${m.tiles.map((tile) => tileEl(tile)).join("")}</div>`).join("");
   return `<div class="overlay"><div class="modal">
     <h2>${title}</h2>
     <p class="sub">${how}</p>
@@ -322,30 +420,63 @@ function overlay(): string {
     ${payoutLines()}
     <div class="balances">${state.players.map((p) => `<span>${p.nameZh} ${formatCash(p.cash)}</span>`).join("")}</div>
     <div class="modal-actions">
-      <button class="btn" data-act="next">下一局 Next round</button>
-      <button class="btn ghost" data-act="reset">重置 Reset $100</button>
+      <button class="btn" data-act="next">${t("nextRound")}</button>
+      <button class="btn ghost" data-act="reset">${t("resetCash")}</button>
     </div>
   </div></div>`;
 }
 
+function humanHandHtml(): string {
+  const hand = state.players[0]!.hand;
+  const n = visibleHandCount(0);
+  const shown = hand.slice(0, n);
+  const arrivingId = flyDraw && flyDraw.seat === 0 && flyDraw.tile ? flyDraw.tile.id : -1;
+  return shown
+    .map((tile) =>
+      tileEl(tile, {
+        size: "hand",
+        selected: tile.id === selected,
+        drawn: tile.id === state.lastDraw?.id && !dealReveal,
+        arriving: tile.id === arrivingId,
+      }),
+    )
+    .join("");
+}
+
+function langToggle(): string {
+  const cur = getLang();
+  return `<div class="lang-toggle" role="group" aria-label="Language">
+    <button type="button" class="lang-btn ${cur === "en" ? "on" : ""}" data-act="lang" data-lang="en">EN</button>
+    <button type="button" class="lang-btn ${cur === "zh" ? "on" : ""}" data-act="lang" data-lang="zh">中文</button>
+  </div>`;
+}
+
 export function render(): void {
-  const mute = isMuted() ? "Unmute" : "Mute";
+  const mute = isMuted() ? t("unmute") : t("mute");
   const last = state.lastDiscard;
   const playing = state.phase !== "bet";
+  const wallN = playing ? visualWallCount() : "—";
+  const statusMsg = dealReveal
+    ? getLang() === "zh"
+      ? `${t("dealing")}<br><span style="opacity:.8">${t("dealing")}</span>`
+      : `${t("dealing")}<br><span style="opacity:.8">${t("dealing")}</span>`
+    : `${state.message}<br><span style="opacity:.8">${state.messageZh}</span>`;
+
   root.innerHTML = `
     <header class="topbar">
-      <div class="brand"><h1>AA Mahjong</h1><span class="zh">东北麻将</span></div>
+      <div class="brand"><h1>AA 麻将</h1><span class="zh">${t("dongbei")}</span></div>
       <div class="meta">
-        <span>第 <b>${state.handNumber}</b> 局</span>
-        <span>赌注 <b>${formatCash(state.stake)}</b></span>
-        <span>牌墙 <b>${playing ? state.wall.length : "—"}</b></span>
-        <span>你 <b>${formatCash(state.players[0]!.cash)}</b></span>
+        <span>${t("hand")} <b>${state.handNumber}</b></span>
+        <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
+        <span>${t("wall")} <b>${wallN}</b></span>
+        <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
       </div>
       <div class="toolbar">
+        ${langToggle()}
         <button class="btn ghost" data-act="mute">${mute}</button>
-        <button class="btn ghost" data-act="shop">Shop 小卖部</button>
-        <button class="btn ghost" data-act="next">下一局</button>
-        <button class="btn" data-act="reset">重置</button>
+        <button class="btn ghost" data-act="shop">${t("shop")}</button>
+        <button class="btn ghost" data-act="next">${t("next")}</button>
+        <button class="btn" data-act="reset">${t("reset")}</button>
       </div>
     </header>
     <div class="stage">
@@ -356,29 +487,66 @@ export function render(): void {
           ${seatHtml(1)}
           ${seatHtml(0)}
           <div class="center">
-            <div class="coin">
-              <div class="round">东北麻将</div>
-              <div class="wall">${playing ? state.wall.length + " in wall" : "下注中"}</div>
-            </div>
+            ${tileWallHtml()}
             <div class="last-discard-slot">
-              ${last ? `<span class="label">Last discard</span>${tileEl(last, { last: true })}` : ""}
+              ${last ? `<span class="label">${t("lastDiscard")}</span>${tileEl(last, { last: true, toss: true })}` : ""}
             </div>
-            <div class="status">${state.message}<br><span style="opacity:.8">${state.messageZh}</span></div>
+            <div class="status">${statusMsg}</div>
+            ${flyOverlay()}
           </div>
         </div>
       </div>
       <div class="dock">
         ${reqHud()}
         <div class="melds-row">${meldHtml(state.players[0]!)}</div>
-        <div class="hand-row">
-          ${state.players[0]!.hand.map((t) => tileEl(t, { size: "hand", selected: t.id === selected, drawn: t.id === state.lastDraw?.id })).join("")}
-        </div>
+        <div class="hand-row">${humanHandHtml()}</div>
         <div class="actions">${turnButtons()}</div>
-        <div class="hint">吃上家 · 碰杠胡任意家 · 暗杠不算开门 · 胡牌需开门/有刻或中发白将/幺九/三门齐</div>
+        <div class="hint">${t("hint")}</div>
       </div>
     </div>
     ${overlay()}
   `;
+}
+
+async function animateDeal(my: number): Promise<void> {
+  dealReveal = [0, 0, 0, 0];
+  busy = true;
+  render();
+
+  // 3 rounds × 4 tiles each
+  for (let round = 0; round < 3; round++) {
+    for (const seat of DEAL_ORDER) {
+      if (my !== gen) return;
+      dealReveal[seat] = Math.min(dealReveal[seat]! + 4, state.players[seat]!.hand.length);
+      sfx.draw();
+      render();
+      await sleep(55);
+    }
+  }
+  // One each to make 13
+  for (const seat of DEAL_ORDER) {
+    if (my !== gen) return;
+    dealReveal[seat] = Math.min(dealReveal[seat]! + 1, state.players[seat]!.hand.length);
+    sfx.draw();
+    render();
+    await sleep(70);
+  }
+  // East jump tile (14th)
+  if (my !== gen) return;
+  dealReveal[0] = Math.min(dealReveal[0]! + 1, state.players[0]!.hand.length);
+  sfx.draw();
+  render();
+  await sleep(120);
+
+  dealReveal = null;
+}
+
+async function animateDraw(seat: number, tile: Tile | null): Promise<void> {
+  flyKey += 1;
+  flyDraw = { seat, tile, key: flyKey };
+  render();
+  await sleep(seat === 0 ? 280 : 240);
+  flyDraw = null;
 }
 
 async function continuePlay(): Promise<void> {
@@ -386,16 +554,24 @@ async function continuePlay(): Promise<void> {
   while (state.phase !== "over" && state.phase !== "claim" && state.phase !== "bet") {
     if (my !== gen) return;
     if (state.phase === "draw") {
-      await sleep(280);
+      const seat = state.current;
+      // Peek: draw happens in engine; animate around it
+      await sleep(80);
       if (my !== gen) return;
+      const beforeLen = state.wall.length;
       drawCurrent(state);
-      sfx.draw();
+      const drawn = state.lastDraw;
+      if (state.wall.length < beforeLen || drawn) {
+        sfx.draw();
+        await animateDraw(seat, seat === 0 ? drawn : null);
+      }
+      if (my !== gen) return;
       render();
     }
     if (state.phase as string === "over") break;
     if (state.phase === "discard") {
       if (state.current === 0) break;
-      await sleep(420 + Math.random() * 380);
+      await sleep(380 + Math.random() * 320);
       if (my !== gen) return;
       const id = aiPlayDiscard(state);
       if (id >= 0) sfx.discard();
@@ -414,11 +590,21 @@ async function afterMove(): Promise<void> {
   await continuePlay();
 }
 
+async function startDealAnimation(): Promise<void> {
+  const my = gen;
+  busy = true;
+  await animateDeal(my);
+  if (my !== gen) return;
+  busy = false;
+  render();
+  // East discard phase — human to play; no auto-continue needed
+}
+
 function findClaim(type: Claim["type"], a?: number, b?: number): Claim | undefined {
   return state.pendingHumanClaims.find((c) => {
     if (c.type !== type) return false;
     if (type === "chow" && c.chow) {
-      const ids = c.chow.tiles.map((t) => t.id).sort();
+      const ids = c.chow.tiles.map((tile) => tile.id).sort();
       return ids[0] === Math.min(a ?? -1, b ?? -1) && ids[1] === Math.max(a ?? -1, b ?? -1);
     }
     return true;
@@ -439,7 +625,7 @@ function buyProp(id: ShopPropId): void {
   if (!item) return;
   const cash = state.players[0]!.cash;
   if (cash < item.price) {
-    shopFlash = `Need $${item.price} · 钱不够啦`;
+    shopFlash = `${t("needMoney")} · $${item.price}`;
     sfx.click();
     render();
     return;
@@ -448,7 +634,8 @@ function buyProp(id: ShopPropId): void {
   giveProp(0, id);
   giveProp(2, id);
   window.setTimeout(() => render(), PROP_MS - 850);
-  shopFlash = `${item.emoji} ${item.name} for both of you!`;
+  const nm = getLang() === "zh" ? item.nameZh : item.name;
+  shopFlash = `${item.emoji} ${nm} ${t("forBoth")}`;
   sfx.claim();
   render();
 }
@@ -456,6 +643,8 @@ function buyProp(id: ShopPropId): void {
 function goNext(): void {
   gen += 1;
   shopOpen = false;
+  dealReveal = null;
+  flyDraw = null;
   nextHand(state);
   selected = null;
   busy = false;
@@ -468,6 +657,8 @@ function goNext(): void {
 function goReset(): void {
   gen += 1;
   shopOpen = false;
+  dealReveal = null;
+  flyDraw = null;
   state = resetTable();
   selected = null;
   busy = false;
@@ -477,10 +668,20 @@ function goReset(): void {
 }
 
 function onClick(ev: Event): void {
-  const t = (ev.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
-  if (!t) return;
+  const el = (ev.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
+  if (!el) return;
   resume();
-  const act = t.dataset.act;
+  const act = el.dataset.act;
+
+  if (act === "lang") {
+    const next = el.dataset.lang as Lang;
+    if (next === "en" || next === "zh") {
+      setLang(next);
+      sfx.click();
+      render();
+    }
+    return;
+  }
   if (act === "mute") {
     setMuted(!isMuted());
     sfx.click();
@@ -502,7 +703,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "buy-prop") {
-    const id = t.dataset.item as ShopPropId;
+    const id = el.dataset.item as ShopPropId;
     if (id === "coffee" || id === "cigarette" || id === "beer") buyProp(id);
     return;
   }
@@ -515,28 +716,29 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "bet-set") {
-    betDraft = Number(t.dataset.n);
+    betDraft = Number(el.dataset.n);
     sfx.click();
     render();
     return;
   }
   if (act === "deal") {
+    if (busy) return;
     const cash = state.players[0]!.cash;
     const stake = cash === 0 ? 0 : Math.max(0, Math.min(betDraft, cash));
     beginRound(state, stake);
     selected = null;
-    busy = false;
     sfx.click();
-    render();
+    void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal") return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute") return;
+  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang")
+    return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang") return;
 
   if (act === "select") {
-    if (state.phase !== "discard" || state.current !== 0) return;
-    const id = Number(t.dataset.id);
+    if (state.phase !== "discard" || state.current !== 0 || dealReveal) return;
+    const id = Number(el.dataset.id);
     if (!state.players[0]!.hand.some((x) => x.id === id)) return;
     selected = selected === id ? null : id;
     sfx.click();
@@ -564,8 +766,8 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "self-kong") {
-    const kind = t.dataset.kind!;
-    const mode = t.dataset.mode as "concealed" | "added";
+    const kind = el.dataset.kind!;
+    const mode = el.dataset.mode as "concealed" | "added";
     if (declareKong(state, kind, mode)) {
       sfx.claim();
       selected = null;
@@ -609,7 +811,7 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "claim-chow") {
-    const c = findClaim("chow", Number(t.dataset.a), Number(t.dataset.b));
+    const c = findClaim("chow", Number(el.dataset.a), Number(el.dataset.b));
     if (c) {
       humanClaim(state, c);
       sfx.claim();
@@ -620,10 +822,10 @@ function onClick(ev: Event): void {
 }
 
 function onDblClick(ev: Event): void {
-  const t = (ev.target as HTMLElement).closest("[data-act='select']") as HTMLElement | null;
-  if (!t || busy) return;
+  const el = (ev.target as HTMLElement).closest("[data-act='select']") as HTMLElement | null;
+  if (!el || busy || dealReveal) return;
   if (state.phase !== "discard" || state.current !== 0) return;
-  const id = Number(t.dataset.id);
+  const id = Number(el.dataset.id);
   if (!state.players[0]!.hand.some((x) => x.id === id)) return;
   selected = null;
   applyDiscard(state, id);
@@ -634,11 +836,12 @@ function onDblClick(ev: Event): void {
 export function start(el: HTMLElement): void {
   selfTestWin();
   loadMute();
+  loadLang();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && selected !== null && !busy && state.phase === "discard" && state.current === 0) {
+    if (e.key === "Enter" && selected !== null && !busy && !dealReveal && state.phase === "discard" && state.current === 0) {
       const id = selected;
       selected = null;
       applyDiscard(state, id);
@@ -652,3 +855,5 @@ export function start(el: HTMLElement): void {
 export function getState(): GameState {
   return state;
 }
+
+// silence unused import if tree-shaken differently
