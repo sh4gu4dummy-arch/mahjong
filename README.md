@@ -66,3 +66,8 @@ Open **Shop 小卖部**. Shared shop items: **Coffee $5**, **Cigarette $1**, **B
 ## Stack
 
 Vite + TypeScript, vanilla DOM. Modules: `tiles`, `win` (东北 checks), `claims`, `ai`, `engine`, UI.
+
+
+## Tile art
+
+Face artwork from [FluffyStuff/riichi-mahjong-tiles](https://github.com/FluffyStuff/riichi-mahjong-tiles) (**CC0 / public domain**). Regular SVG faces are vendored under `public/tiles/` (see `public/tiles/LICENSE.md`). Ivory bevel frame, soft shadow, and green lattice backs are CSS in this project.

@@ -1,5 +1,5 @@
 import type { Claim, GameState, Player, Tile, Wind } from "../game/types";
-import { sortTiles, WIND_ZH, WIND_EN } from "../game/tiles";
+import { sortTiles, WIND_ZH } from "../game/tiles";
 import {
   applyDiscard,
   aiPlayDiscard,
@@ -143,6 +143,8 @@ function riverHtml(p: Player): string {
 }
 
 function cashChip(p: Player): string {
+  // Only the human wallet is visible; AI money is unlimited and hidden.
+  if (!p.isHuman) return "";
   return `<span class="cash">${formatCash(p.cash)}</span>`;
 }
 
@@ -155,17 +157,25 @@ function handProp(i: number, big = false): string {
   return `<img class="hand-prop prop-${p.id} ${big ? "big" : ""} ${fading}" src="${item.src}" alt="${item.name}" draggable="false" />`;
 }
 
+function seatRelLabel(i: number): string {
+  if (i === 0) return t("seatYou");
+  if (i === 1) return t("seatRight"); // 下家 / next
+  if (i === 2) return t("seatOpp"); // 对家
+  return t("seatLeft"); // 上家 / prev
+}
+
 function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
   const src = SEAT_AVATAR[i]!;
-  const label = p.isHuman ? "YOU" : WIND_EN[p.seat];
+  const rel = seatRelLabel(i);
+  const wind = WIND_ZH[p.seat];
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
-      <img class="avatar" src="${src}" alt="${label}" draggable="false" />
+      <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
       ${handProp(i)}
     </div>
     <div class="avatar-meta">
-      <span class="avatar-name">${WIND_ZH[p.seat]} · ${label}</span>
+      <span class="avatar-name">${rel}<span class="wind-chip" title="${wind}">${wind}</span></span>
       ${cashChip(p)}
     </div>
   </div>`;
@@ -242,10 +252,6 @@ function tileWallHtml(): string {
     ${wallSideHtml(counts[3]!, "left")}
     ${wallSideHtml(counts[1]!, "right")}
     ${wallSideHtml(counts[0]!, "bottom")}
-    <div class="wall-hub">
-      <div class="wall-title">${t("dongbei")}</div>
-      <div class="wall-count">${n} ${t("inWall")}</div>
-    </div>
   </div>`;
 }
 
@@ -341,7 +347,7 @@ function shopOverlay(): string {
   const flash = shopFlash ? `<p class="shop-flash">${shopFlash}</p>` : "";
   const items = SHOP_ITEMS.map((item) => {
     const can = cash >= item.price;
-    const label = getLang() === "zh" ? `${item.emoji} ${item.nameZh} · ${item.name}` : `${item.emoji} ${item.name} · ${item.nameZh}`;
+    const label = getLang() === "zh" ? `${item.emoji} ${item.nameZh}` : `${item.emoji} ${item.name}`;
     return `<div class="shop-item">
       <img class="shop-item-img" src="${item.src}" alt="${item.name}" draggable="false" />
       <div class="shop-item-info">
@@ -353,32 +359,35 @@ function shopOverlay(): string {
       </button>
     </div>`;
   }).join("");
-  return `<div class="overlay shop-overlay"><div class="modal shop-modal">
-    <h2>${t("shopTitle")}</h2>
-    <p class="sub">${t("shopSub")} ${formatCash(cash)}</p>
-    <div class="shop-chars">
-      <div class="shop-char on">
-        <div class="avatar-ring shop-ring">
-          <img class="avatar" src="avatars/player.png" alt="You" draggable="false" />
+  return `<div class="shop-scene" role="dialog" aria-label="${t("shopTitle")}">
+    <div class="shop-bg" style="background-image:url('bg/park.png')" aria-hidden="true"></div>
+    <div class="shop-stage">
+      <div class="shop-char-full you">
+        <div class="shop-char-body">
+          <img class="shop-full" src="chars/player-full.png" alt="${t("seatYou")}" draggable="false" />
           ${handProp(0, true)}
         </div>
-        <span class="avatar-name">${t("seatYou")}</span>
+        <span class="shop-char-label">${t("seatYou")}</span>
       </div>
-      <div class="shop-char on">
-        <div class="avatar-ring shop-ring">
-          <img class="avatar" src="avatars/opposite.png?v=buzz2" alt="Opposite" draggable="false" />
+      <div class="shop-char-full opp">
+        <div class="shop-char-body">
+          <img class="shop-full" src="chars/opposite-full.png" alt="${t("seatOpp")}" draggable="false" />
           ${handProp(2, true)}
         </div>
-        <span class="avatar-name">${t("seatOpp")}</span>
+        <span class="shop-char-label">${t("seatOpp")}</span>
       </div>
     </div>
-    <div class="shop-catalog">${items}</div>
-    ${flash}
-    <div class="modal-actions">
-      <button class="btn ghost" data-act="shop-close">${t("close")}</button>
-    </div>
-    ${cash < 1 ? `<p class="sub">${t("walletEmpty")}</p>` : ""}
-  </div></div>`;
+    <aside class="shop-panel">
+      <h2>${t("shopTitle")}</h2>
+      <p class="sub">${t("shopSub")} ${formatCash(cash)}</p>
+      <div class="shop-catalog">${items}</div>
+      ${flash}
+      ${cash < 1 ? `<p class="sub">${t("walletEmpty")}</p>` : ""}
+      <div class="modal-actions">
+        <button class="btn" data-act="shop-close">${t("close")}</button>
+      </div>
+    </aside>
+  </div>`;
 }
 
 function overlay(): string {
@@ -434,7 +443,7 @@ function overlay(): string {
     <div class="win-tiles">${melds}${tiles}</div>
     <ul class="fan-list">${lines}</ul>
     ${payoutLines()}
-    <div class="balances">${state.players.map((p) => `<span>${p.nameZh} ${formatCash(p.cash)}</span>`).join("")}</div>
+    <div class="balances"><span>${t("you")} ${formatCash(state.players[0]!.cash)}</span></div>
     <div class="modal-actions">
       <button class="btn" data-act="next">${t("nextRound")}</button>
       <button class="btn ghost" data-act="reset">${t("resetCash")}</button>
@@ -484,10 +493,29 @@ export function render(): void {
   const playing = state.phase !== "bet";
   const wallN = playing ? visualWallCount() : "—";
   const statusMsg = dealReveal
-    ? getLang() === "zh"
-      ? `${t("dealing")}<br><span style="opacity:.8">${t("dealing")}</span>`
-      : `${t("dealing")}<br><span style="opacity:.8">${t("dealing")}</span>`
-    : `${state.message}<br><span style="opacity:.8">${state.messageZh}</span>`;
+    ? t("dealing")
+    : getLang() === "zh"
+      ? state.messageZh
+      : state.message;
+
+  // Full-screen park shop — hide the entire mahjong board while open.
+  if (shopOpen) {
+    root.innerHTML = `
+      <header class="topbar shop-topbar">
+        <div class="brand"><h1>AA 麻将</h1><span class="zh">${t("shopTitle")}</span></div>
+        <div class="meta">
+          <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+        </div>
+        <div class="toolbar">
+          ${langToggle()}
+          <button class="btn ghost" data-act="mute">${mute}</button>
+          <button class="btn" data-act="shop-close">${t("close")}</button>
+        </div>
+      </header>
+      ${shopOverlay()}
+    `;
+    return;
+  }
 
   root.innerHTML = `
     <header class="topbar">

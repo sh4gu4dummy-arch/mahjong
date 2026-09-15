@@ -142,11 +142,18 @@ function finishDrawGame(state: GameState): void {
 
 function pay(state: GameState, from: number, to: number, amount: number): number {
   if (amount <= 0) return 0;
-  const have = state.players[from]!.cash;
-  const amt = Math.min(have, amount);
+  const payer = state.players[from]!;
+  const payee = state.players[to]!;
+  // AI never go broke — always pay the full stake; bankroll is unlimited / hidden.
+  if (!payer.isHuman) {
+    if (payee.isHuman) payee.cash += amount;
+    return amount;
+  }
+  // Human is clamped to wallet.
+  const amt = Math.min(payer.cash, amount);
   if (amt <= 0) return 0;
-  state.players[from]!.cash -= amt;
-  state.players[to]!.cash += amt;
+  payer.cash -= amt;
+  if (payee.isHuman) payee.cash += amt;
   return amt;
 }
 
