@@ -141,18 +141,6 @@ button { font-family: inherit; }
   overflow: hidden;
 }
 
-.table::before {
-  content: "麻雀";
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  transform: translate(-50%, -50%);
-  font-family: "Noto Serif SC", serif;
-  font-size: clamp(48px, 12vw, 110px);
-  color: rgba(255, 215, 140, 0.07);
-  pointer-events: none;
-  letter-spacing: 0.2em;
-}
 
 .pos-top { grid-area: top; }
 .pos-left { grid-area: left; }
