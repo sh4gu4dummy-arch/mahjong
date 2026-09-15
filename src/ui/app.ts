@@ -352,7 +352,18 @@ function payoutLines(): string {
     .map((x) => `<li><span>${names[x.from]} → ${names[x.to]}</span><span class="pts">${formatCash(x.amount)}</span></li>`)
     .join("");
   const scheme = w.selfDraw ? t("paySelf") : t("payDiscard");
-  return `<p class="sub">${scheme} · ${t("stakeAmount")} $${w.stake}</p><ul class="fan-list">${rows}</ul>`;
+  let youNet = 0;
+  for (const x of w.payouts) {
+    if (x.to === 0) youNet += x.amount;
+    if (x.from === 0) youNet -= x.amount;
+  }
+  const youLine =
+    youNet > 0
+      ? `<p class="sub wallet-delta up">${t("youGot")} ${formatCash(youNet)}</p>`
+      : youNet < 0
+        ? `<p class="sub wallet-delta down">${t("youPaid")} ${formatCash(-youNet)}</p>`
+        : `<p class="sub wallet-delta">${t("noWalletChange")}</p>`;
+  return `<p class="sub">${scheme} · ${t("stakeAmount")} $${w.stake}</p><ul class="fan-list">${rows}</ul>${youLine}`;
 }
 
 function shopOverlay(): string {
@@ -421,11 +432,11 @@ function overlay(): string {
     const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : `<p class="sub">${t("payNote")}</p>`;
     return `<div class="overlay"><div class="modal">
       <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="${t("you")}" /></div>
-      <h2>${t("dongbei")}</h2>
+      <h2>${t("brand")}</h2>
       <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
       <div class="bet-row">${cash === 0 ? `<span class="bet-chip on">$0</span>` : chips}</div>
       ${zeroNote}
-      <p class="rules-mini">${t("rulesMini")}</p>
+      ${t("rulesMini") ? `<p class="rules-mini">${t("rulesMini")}</p>` : ""}
       <button class="btn" data-act="deal">${t("deal")} · ${formatCash(clamped)}</button>
     </div></div>`;
   }

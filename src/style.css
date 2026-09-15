@@ -1293,3 +1293,7 @@ button { font-family: inherit; }
 .tile.dragon-w .face-img {
   opacity: 1;
 }
+
+.wallet-delta { font-weight: 800; margin-top: 8px; }
+.wallet-delta.up { color: #7dcea0; }
+.wallet-delta.down { color: #f5a6a6; }
