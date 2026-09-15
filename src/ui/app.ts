@@ -83,10 +83,10 @@ const seatPropTimers: Record<number, number> = {};
 
 const SEAT_POS = ["bottom", "right", "top", "left"] as const;
 const SEAT_AVATAR = [
-  "avatars/player.png",
-  "avatars/right.png",
-  "avatars/opposite.png?v=buzz2",
-  "avatars/left.png",
+  "avatars/player.png?v=a1",
+  "avatars/right.png?v=l1",
+  "avatars/opposite.png?v=j1",
+  "avatars/left.png?v=c2",
 ] as const;
 
 /** Counter-clockwise from East: E(0) → N(3) → W(2) → S(1) */
@@ -407,7 +407,7 @@ function overlay(): string {
       .join("");
     const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : `<p class="sub">${t("payNote")}</p>`;
     return `<div class="overlay"><div class="modal">
-      <div class="modal-hero"><img class="avatar hero" src="avatars/player.png" alt="You" /></div>
+      <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="You" /></div>
       <h2>${t("dongbei")}</h2>
       <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
       <div class="bet-row">${cash === 0 ? `<span class="bet-chip on">$0</span>` : chips}</div>
