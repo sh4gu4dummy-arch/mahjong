@@ -1,5 +1,6 @@
-node_modules
-dist
-.DS_Store
 
+.DS_Store
 .venv
+dist
+node_modules
+public/props/*.opaque-bak.png

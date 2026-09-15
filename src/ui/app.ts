@@ -85,9 +85,9 @@ interface SeatProp {
 
 const PROP_MS = 3800;
 const SHOP_ITEMS: ShopItem[] = [
-  { id: "coffee", name: "Coffee", nameZh: "咖啡", price: 5, src: "props/coffee.png", emoji: "☕" },
-  { id: "cigarette", name: "Cigarette", nameZh: "烟", price: 1, src: "props/cigarette.png", emoji: "🚬" },
-  { id: "beer", name: "Beer", nameZh: "啤酒", price: 5, src: "props/beer.png", emoji: "🍺" },
+  { id: "coffee", name: "Coffee", nameZh: "咖啡", price: 5, src: "props/coffee.png?v=cut3", emoji: "☕" },
+  { id: "cigarette", name: "Cigarette", nameZh: "烟", price: 1, src: "props/cigarette.png?v=cut3", emoji: "🚬" },
+  { id: "beer", name: "Beer", nameZh: "啤酒", price: 5, src: "props/beer.png?v=cut3", emoji: "🍺" },
 ];
 const seatProp: Record<number, SeatProp | undefined> = {};
 const seatPropTimers: Record<number, number> = {};
