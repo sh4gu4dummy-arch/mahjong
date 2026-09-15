@@ -164,7 +164,7 @@ function tileEl(
 }
 
 function backFaceHtml(): string {
-  return `<img class="face-img back-face" src="tiles/Back.svg?v=green1" alt="" draggable="false" decoding="async" aria-hidden="true" />`;
+  return `<img class="face-img back-face" src="tiles/Back.svg?v=green2" alt="" draggable="false" decoding="async" aria-hidden="true" />`;
 }
 
 function backs(n: number, arriving = false): string {

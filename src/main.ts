@@ -9,7 +9,9 @@ start(app);
 function registerAssetCache(): void {
   if (!("serviceWorker" in navigator)) return;
   const sw = new URL("sw.js", window.location.href);
-  void navigator.serviceWorker.register(sw.href).catch(() => undefined);
+  void navigator.serviceWorker.register(sw.href).then((reg) => {
+    void reg.update();
+  }).catch(() => undefined);
 }
 
 function warmImages(): void {
@@ -18,7 +20,7 @@ function warmImages(): void {
     "avatars/right.png?v=l1",
     "avatars/opposite.png?v=j2",
     "avatars/left.png?v=c2",
-    "tiles/Back.svg?v=green1",
+    "tiles/Back.svg?v=green2",
     "chars/player-full.png?v=cut2",
     "chars/opposite-full.png?v=cut2",
     "bg/park.png",
