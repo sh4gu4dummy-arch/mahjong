@@ -1272,29 +1272,41 @@ button { font-family: inherit; }
   box-shadow: 0 4px 12px rgba(0,0,0,.35);
 }
 .shop-char-body .hand-prop {
-  width: 56px;
-  height: 56px;
-  right: 4%;
-  bottom: 28%;
+  /* Hold at hand height — not glued to the shins */
+  width: 44px;
+  height: 44px;
+  right: 2%;
+  bottom: 48%;
   z-index: 4;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.55));
 }
 .shop-char-body .hand-prop.prop-cigarette {
-  width: 64px;
-  height: 64px;
-  transform: rotate(-18deg);
+  width: 48px;
+  height: 48px;
+  transform: rotate(-22deg);
+  bottom: 52%;
 }
 .shop-char-body .hand-prop.prop-beer {
-  width: 58px;
-  height: 68px;
+  width: 42px;
+  height: 52px;
+  bottom: 47%;
+}
+.shop-char-body .hand-prop.prop-coffee {
+  width: 46px;
+  height: 46px;
+  bottom: 49%;
 }
 .shop-char-full.you .shop-char-body .hand-prop {
-  right: 10%;
-  bottom: 30%;
+  /* A is facing away — prop at right hand */
+  right: 6%;
+  left: auto;
+  bottom: 46%;
 }
 .shop-char-full.opp .shop-char-body .hand-prop {
-  left: 8%;
-  right: auto;
-  bottom: 32%;
+  /* J facing us — prop near left hand (screen right of body center) */
+  left: auto;
+  right: 4%;
+  bottom: 48%;
 }
 .shop-panel {
   position: relative;
