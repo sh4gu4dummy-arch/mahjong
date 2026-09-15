@@ -31,10 +31,7 @@ const dict = {
     zh: "你是 $0 — 继续打为面子。赢了再攒钱。",
     en: "You are at $0 — play on for pride. Win to rebuild the stack.",
   },
-  payNote: {
-    zh: "点炮由放炮者付；自摸其余三家各付。只有你的钱包会变。",
-    en: "Only the discarder pays on a discard win; on self-draw the other three pay. Only your wallet changes.",
-  },
+  payNote: { zh: "", en: "" },
   rulesMini: {
     zh: "",
     en: "",
@@ -84,6 +81,9 @@ const dict = {
   auto: { zh: "自动", en: "Auto" },
   autoOn: { zh: "开", en: "ON" },
   autoOff: { zh: "关", en: "OFF" },
+  paceFast: { zh: "快", en: "Fast" },
+  paceSlow: { zh: "慢", en: "Slow" },
+  paceAria: { zh: "自动速度", en: "Auto pace" },
   language: { zh: "语言", en: "Language" },
   tipsAria: { zh: "AI 提示", en: "AI tips" },
   tipAria: { zh: "AI 提示出牌", en: "AI tip" },
@@ -184,4 +184,36 @@ export function setAutoTips(next: boolean): void {
   } catch {
     /* ignore */
   }
+}
+
+const AUTO_PACE_KEY = "aa-mahjong-auto-pace";
+export type AutoPace = "fast" | "slow";
+let autoPace: AutoPace = "fast";
+
+export function loadAutoPace(): AutoPace {
+  try {
+    const v = localStorage.getItem(AUTO_PACE_KEY);
+    if (v === "slow" || v === "fast") autoPace = v;
+  } catch {
+    /* ignore */
+  }
+  return autoPace;
+}
+
+export function getAutoPace(): AutoPace {
+  return autoPace;
+}
+
+export function setAutoPace(next: AutoPace): void {
+  autoPace = next === "slow" ? "slow" : "fast";
+  try {
+    localStorage.setItem(AUTO_PACE_KEY, autoPace);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Multiply play delays: fast = 1× (current), slow = 3× for watching Auto. */
+export function paceFactor(): number {
+  return autoPace === "slow" ? 3 : 1;
 }

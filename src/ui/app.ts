@@ -19,11 +19,13 @@ import {
 import { selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
-import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, t, type Lang } from "./i18n";
+import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, t, type Lang, type AutoPace } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
 import { loadSave, saveGame } from "./persist";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** When Auto is on + Slow, stretch play timing 3× so you can watch. */
+const paced = (ms: number) => sleep(ms * (getAutoTips() ? paceFactor() : 1));
 
 let state: GameState = createTable();
 let selected: number | null = null;
@@ -429,7 +431,7 @@ function overlay(): string {
           `<button class="bet-chip ${clamped === n ? "on" : ""}" data-act="bet-set" data-n="${n}">$${n}</button>`,
       )
       .join("");
-    const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : `<p class="sub">${t("payNote")}</p>`;
+    const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : "";
     return `<div class="overlay"><div class="modal">
       <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="${t("you")}" /></div>
       <h2>${t("brand")}</h2>
@@ -447,7 +449,6 @@ function overlay(): string {
       <p class="sub">${t("drawGameSub")}</p>
       <div class="modal-actions">
         <button class="btn" data-act="next">${t("nextRound")}</button>
-        <button class="btn ghost" data-act="reset">${t("resetCash")}</button>
       </div>
     </div></div>`;
   }
@@ -474,7 +475,6 @@ function overlay(): string {
     <div class="balances"><span>${t("you")} ${formatCash(state.players[0]!.cash)}</span></div>
     <div class="modal-actions">
       <button class="btn" data-act="next">${t("nextRound")}</button>
-      <button class="btn ghost" data-act="reset">${t("resetCash")}</button>
     </div>
   </div></div>`;
 }
@@ -530,9 +530,17 @@ function langToggle(): string {
 function tipsToggle(): string {
   const on = getTips();
   const auto = getAutoTips();
+  const pace = getAutoPace();
+  const paceBtns = auto
+    ? `<div class="pace-toggle" role="group" aria-label="${t("paceAria")}">
+        <button type="button" class="act pace-act ${pace === "fast" ? "on" : ""}" data-act="auto-pace" data-pace="fast">${t("paceFast")}</button>
+        <button type="button" class="act pace-act ${pace === "slow" ? "on" : ""}" data-act="auto-pace" data-pace="slow">${t("paceSlow")}</button>
+      </div>`
+    : "";
   return `<div class="tips-toggle dock-tips" role="group" aria-label="${t("tipsAria")}">
     <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}">${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}</button>
     <button type="button" class="act auto-act ${auto ? "on" : ""}" data-act="auto-tips" data-on="${auto ? "0" : "1"}">${t("auto")} · ${auto ? t("autoOn") : t("autoOff")}</button>
+    ${paceBtns}
   </div>`;
 }
 
@@ -658,7 +666,7 @@ async function animateDraw(seat: number, tile: Tile | null): Promise<void> {
   flyKey += 1;
   flyDraw = { seat, tile, key: flyKey };
   render();
-  await sleep(seat === 0 ? 280 : 240);
+  await paced(seat === 0 ? 280 : 240);
   flyDraw = null;
 }
 
@@ -669,7 +677,7 @@ async function continuePlay(): Promise<void> {
     if (state.phase === "draw") {
       const seat = state.current;
       // Peek: draw happens in engine; animate around it
-      await sleep(80);
+      await paced(80);
       if (my !== gen) return;
       const beforeLen = state.wall.length;
       drawCurrent(state);
@@ -684,7 +692,7 @@ async function continuePlay(): Promise<void> {
     if (state.phase as string === "over") break;
     if (state.phase === "discard") {
       if (state.current === 0) break;
-      await sleep(380 + Math.random() * 320);
+      await paced(380 + Math.random() * 320);
       if (my !== gen) return;
       const id = aiPlayDiscard(state);
       if (id >= 0) sfx.discard();
@@ -749,7 +757,7 @@ function scheduleAutoPlay(): void {
   if (busy || dealReveal || shopOpen) return;
   if (state.phase === "bet" || state.phase === "over") return;
 
-  const delay = 400 + Math.floor(Math.random() * 301);
+  const delay = (400 + Math.floor(Math.random() * 301)) * paceFactor();
   const token = autoToken;
 
   if (state.phase === "discard" && state.current === 0) {
@@ -906,6 +914,13 @@ function onClick(ev: Event): void {
     render();
     return;
   }
+  if (act === "auto-pace") {
+    const p = el.dataset.pace === "slow" ? "slow" : "fast";
+    setAutoPace(p as AutoPace);
+    sfx.click();
+    render();
+    return;
+  }
   if (act === "menu-toggle") {
     menuOpen = !menuOpen;
     sfx.click();
@@ -970,10 +985,10 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips")
+  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace")
     return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips") return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace") return;
 
   if (act === "select") {
     clearAutoTimer();
@@ -1098,6 +1113,7 @@ export function start(el: HTMLElement): void {
   loadLang();
   loadTips();
   loadAutoTips();
+  loadAutoPace();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);
