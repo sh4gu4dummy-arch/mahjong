@@ -48,7 +48,7 @@ const dict = {
   faceAway: { zh: "背影", en: "Away" },
   faceCamera: { zh: "正面", en: "Face" },
   faceAria: { zh: "切换形象", en: "Switch look" },
-  resetCash: { zh: "现金恢复到 $1", en: "Reset cash to $1" },
+  resetCash: { zh: "现金恢复到 $100", en: "Reset cash to $100" },
   youWin: { zh: "你胡了", en: "You win" },
   youPaid: { zh: "你付了", en: "You paid" },
   youGot: { zh: "你收了", en: "You received" },

@@ -14,7 +14,7 @@
   --shadow: rgba(0, 0, 0, 0.45);
   /* Mobile-first: same face art as desktop; size fits a 14-tile hand + dock. */
   --dock-avatar: 84px;
-  --tile-w: min(42px, calc((100vw - var(--dock-avatar) - 28px) / 14.6));
+  --tile-w: min(46px, calc((100vw - 24px) / 14.6));
   --tile-h: calc(var(--tile-w) * 1.375);
   --human-tile-w: var(--tile-w);
   --human-tile-h: var(--tile-h);
@@ -701,11 +701,12 @@ button { font-family: inherit; }
   position: sticky;
   bottom: 0;
   z-index: 15;
-  padding: 6px max(8px, var(--safe-right)) max(10px, var(--safe-bottom)) max(8px, var(--safe-left));
+  padding: 4px max(8px, var(--safe-right)) max(6px, var(--safe-bottom)) max(8px, var(--safe-left));
   background: linear-gradient(180deg, #2a160a, #140c08);
   border-top: 1px solid #6b4a22;
-  box-shadow: 0 -8px 24px rgba(0,0,0,.35);
-  overflow: visible;
+  box-shadow: 0 -6px 18px rgba(0,0,0,.35);
+  overflow: hidden;
+  max-width: 100%;
 }
 .melds-row {
   display: flex;
@@ -718,13 +719,13 @@ button { font-family: inherit; }
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 1px;
+  gap: 2px;
   flex-wrap: nowrap;
   min-height: var(--tile-h);
-  padding-top: 10px;
+  padding-top: 2px;
   width: 100%;
   max-width: 100%;
-  overflow: hidden; /* must fit — no sideways clip mystery */
+  overflow: hidden;
 }
 .actions {
   display: flex;
@@ -732,10 +733,10 @@ button { font-family: inherit; }
   justify-content: center;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 4px;
   width: 100%;
   max-width: 100%;
-  min-height: var(--touch);
+  min-height: 0;
   overflow: hidden;
 }
 .act {
@@ -946,7 +947,7 @@ button { font-family: inherit; }
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
     --dock-avatar: 72px;
-    --tile-w: min(38px, calc((100vw - var(--dock-avatar) - 24px) / 14.6));
+    --tile-w: min(40px, calc((100vw - 20px) / 14.6));
     --tile-h: calc(var(--tile-w) * 1.375);
   }
   .tile-wall {
@@ -1550,47 +1551,39 @@ button { font-family: inherit; }
 .wallet-delta.down { color: #f5a6a6; }
 
 
-/* Human dock: avatar + full hand, never wider than the phone */
-.dock {
-  max-width: 100%;
-  overflow: hidden;
-}
+/* Human dock: A centered under J; hand under avatar; keep banner thin */
 .dock-top {
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 6px;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto 4px;
-  overflow: hidden;
-  padding: 0 2px;
-}
-.dock-top .avatar-wrap {
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: 0;
+}
+.dock-top .avatar-wrap {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   flex-shrink: 0;
-  gap: 2px;
-  width: var(--dock-avatar);
+  gap: 8px;
 }
 .dock-top .avatar-ring {
   width: var(--dock-avatar);
   height: var(--dock-avatar);
 }
 .dock-top .avatar-meta {
-  align-items: center;
-  max-width: var(--dock-avatar);
+  align-items: flex-start;
+  max-width: none;
 }
-.dock-play {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: hidden;
+.dock-top .avatar-meta .avatar-name {
+  align-self: flex-start;
 }
+
 
 .pace-toggle {
   display: inline-flex;
@@ -1652,4 +1645,35 @@ button { font-family: inherit; }
   font-size: 15px;
   background: linear-gradient(180deg, #e7c36a, #c9a24a);
   color: #1a1208;
+}
+
+
+/* Landscape phones: keep the bottom banner slim */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --dock-avatar: 56px;
+    --tile-w: min(36px, calc((100vw - 20px) / 16));
+    --tile-h: calc(var(--tile-w) * 1.3);
+  }
+  .dock {
+    padding-top: 2px;
+    padding-bottom: max(4px, var(--safe-bottom));
+  }
+  .dock-top {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+  }
+  .dock-top .avatar-wrap {
+    order: 0;
+  }
+  .hand-row {
+    order: 1;
+    flex: 1 1 100%;
+    padding-top: 0;
+  }
+  .actions { margin-top: 2px; gap: 4px; }
+  .act { padding: 4px 8px; min-height: 36px; font-size: 11px; }
 }

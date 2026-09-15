@@ -31,7 +31,7 @@ let state: GameState = createTable();
 let selected: number | null = null;
 let busy = false;
 let gen = 0;
-let betDraft = 1;
+let betDraft = 10;
 let root: HTMLElement;
 let shopOpen = false;
 let shopFlash = "";
@@ -648,9 +648,7 @@ export function render(): void {
       <div class="dock">
         <div class="dock-top">
           ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
-          <div class="dock-play">
-            <div class="hand-row">${humanHandHtml()}</div>
-          </div>
+          <div class="hand-row">${humanHandHtml()}</div>
         </div>
         <div class="actions">${turnButtons()}${tipsToggle()}</div>
       </div>
@@ -906,7 +904,7 @@ function goReset(): void {
   state = resetTable();
   selected = null;
   busy = false;
-  betDraft = 1;
+  betDraft = 10;
   sfx.click();
   saveNow();
   render();
