@@ -88,6 +88,8 @@ const dict = {
   tipsAria: { zh: "AI 提示", en: "AI tips" },
   tipAria: { zh: "AI 提示出牌", en: "AI tip" },
   brand: { zh: "AA 麻将", en: "AA Mahjong" },
+  menu: { zh: "菜单", en: "Menu" },
+  more: { zh: "更多", en: "More" },
   fanUnit: { zh: "番", en: "fan" },
   stakeAmount: { zh: "赌注", en: "Stake" },
 } as const;

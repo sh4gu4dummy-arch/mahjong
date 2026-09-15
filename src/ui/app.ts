@@ -33,6 +33,7 @@ let betDraft = 10;
 let root: HTMLElement;
 let shopOpen = false;
 let shopFlash = "";
+let menuOpen = false;
 
 /** UI-only dealing: how many tiles revealed per seat (engine already dealt). */
 let dealReveal: [number, number, number, number] | null = null;
@@ -497,6 +498,27 @@ function humanHandHtml(): string {
     .join("");
 }
 
+
+function cashPill(): string {
+  return `<span class="cash-pill">${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>`;
+}
+
+function overflowMenu(mute: string): string {
+  return `<div class="topbar-more">
+    <button type="button" class="btn ghost menu-btn" data-act="menu-toggle" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="${t("menu")}">⋯</button>
+    <div class="overflow-menu ${menuOpen ? "open" : ""}" role="menu">
+      <div class="overflow-meta">
+        <span>${t("hand")} <b>${state.handNumber}</b></span>
+        <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
+      </div>
+      ${langToggle()}
+      <button type="button" class="btn ghost overflow-item" data-act="mute" role="menuitem">${mute}</button>
+      <button type="button" class="btn ghost overflow-item" data-act="next" role="menuitem">${t("next")}</button>
+      <button type="button" class="btn overflow-item" data-act="reset" role="menuitem">${t("reset")}</button>
+    </div>
+  </div>`;
+}
+
 function langToggle(): string {
   const cur = getLang();
   return `<div class="lang-toggle" role="group" aria-label="${t("language")}">
@@ -523,14 +545,17 @@ export function render(): void {
   if (shopOpen) {
     root.innerHTML = `
       <header class="topbar shop-topbar">
-        <div class="brand"><h1>${t("brand")}</h1><span class="zh">${t("shopTitle")}</span></div>
-        <div class="topbar-center">
-          <div class="meta">
-            <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
-          </div>
+        <div class="brand"><h1>${t("brand")}</h1></div>
+        <div class="topbar-main">
+          ${cashPill()}
+          <button class="btn" data-act="shop-close">${t("close")}</button>
+        </div>
+        ${overflowMenu(mute)}
+        <div class="topbar-center desktop-only">
+          ${cashPill()}
           ${langToggle()}
         </div>
-        <div class="toolbar">
+        <div class="toolbar desktop-toolbar">
           <button class="btn ghost" data-act="mute">${mute}</button>
           <button class="btn" data-act="shop-close">${t("close")}</button>
         </div>
@@ -543,17 +568,22 @@ export function render(): void {
 
   root.innerHTML = `
     <header class="topbar">
-      <div class="brand"><h1>${t("brand")}</h1><span class="zh">${t("dongbei")}</span></div>
-      <div class="topbar-center">
+      <div class="brand"><h1>${t("brand")}</h1></div>
+      <div class="topbar-main">
+        ${cashPill()}
+        <button class="btn shop-btn" data-act="shop">${t("shop")}</button>
+      </div>
+      ${overflowMenu(mute)}
+      <div class="topbar-center desktop-only">
         <div class="meta">
           <span>${t("hand")} <b>${state.handNumber}</b></span>
           <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
-          <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+          ${cashPill()}
         </div>
         <button class="btn shop-btn" data-act="shop">${t("shop")}</button>
         ${langToggle()}
       </div>
-      <div class="toolbar">
+      <div class="toolbar desktop-toolbar">
         <button class="btn ghost" data-act="mute">${mute}</button>
         <button class="btn ghost" data-act="next">${t("next")}</button>
         <button class="btn" data-act="reset">${t("reset")}</button>
@@ -812,6 +842,7 @@ function goNext(): void {
   gen += 1;
   clearAutoTimer();
   shopOpen = false;
+  menuOpen = false;
   dealReveal = null;
   flyDraw = null;
   nextHand(state);
@@ -828,6 +859,7 @@ function goReset(): void {
   gen += 1;
   clearAutoTimer();
   shopOpen = false;
+  menuOpen = false;
   dealReveal = null;
   flyDraw = null;
   state = resetTable();
@@ -840,8 +872,15 @@ function goReset(): void {
 }
 
 function onClick(ev: Event): void {
-  const el = (ev.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
-  if (!el) return;
+  const target = ev.target as HTMLElement;
+  const el = target.closest("[data-act]") as HTMLElement | null;
+  if (!el) {
+    if (menuOpen && !target.closest(".topbar-more")) {
+      menuOpen = false;
+      render();
+    }
+    return;
+  }
   resume();
   const act = el.dataset.act;
 
@@ -849,6 +888,7 @@ function onClick(ev: Event): void {
     const next = el.dataset.lang as Lang;
     if (next === "en" || next === "zh") {
       setLang(next);
+      menuOpen = false;
       sfx.click();
       render();
     }
@@ -866,8 +906,20 @@ function onClick(ev: Event): void {
     render();
     return;
   }
+  if (act === "menu-toggle") {
+    menuOpen = !menuOpen;
+    sfx.click();
+    render();
+    return;
+  }
+  if (act === "menu-close") {
+    menuOpen = false;
+    render();
+    return;
+  }
   if (act === "mute") {
     setMuted(!isMuted());
+    menuOpen = false;
     sfx.click();
     render();
     return;
@@ -875,6 +927,7 @@ function onClick(ev: Event): void {
   if (act === "shop") {
     shopOpen = true;
     shopFlash = "";
+    menuOpen = false;
     sfx.click();
     render();
     return;
