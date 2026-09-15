@@ -200,7 +200,7 @@ function seatRelLabel(i: number): string {
 }
 
 function playerAvatarSrc(): string {
-  return getAFace() === "camera" ? "avatars/player-face.png?v=face1" : "avatars/player.png?v=a1";
+  return getAFace() === "camera" ? "avatars/player-face.png?v=face2" : "avatars/player.png?v=a1";
 }
 
 const HOLD_POSE_V = "hold1";
@@ -210,7 +210,7 @@ function playerFullSrc(prop?: ShopPropId | null): string {
   if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
   if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
   if (prop === "cigarette") return `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
-  return getAFace() === "camera" ? "chars/player-face.png?v=face1" : "chars/player-full.png?v=cut2";
+  return getAFace() === "camera" ? "chars/player-face.png?v=face2" : "chars/player-full.png?v=cut2";
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {
@@ -346,6 +346,10 @@ function claimButtons(): string {
 }
 
 function turnButtons(): string {
+  // After Close on end screen: big Next round so the table isn't a dead end.
+  if (state.phase === "over" && resultDismissed) {
+    return `<button class="act win next-round-dock" data-act="next">${t("nextRound")}</button>`;
+  }
   // Always keep Discard + Sort in the dock so the bar doesn't jump.
   const myDiscard = !dealReveal && !busy && state.phase === "discard" && state.current === 0;
   const btns: string[] = [];
@@ -1027,7 +1031,7 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
+  if (busy && act !== "mute" && act !== "shop" && act !== "next" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
   if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result")
     return;
   if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;

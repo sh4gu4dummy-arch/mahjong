@@ -12,15 +12,15 @@
   --tile-face: #fffaf0;
   --tile-edge: #cfc3a4;
   --shadow: rgba(0, 0, 0, 0.45);
-  /* One play-tile size for hand + board (river/melds). Wall stays smaller. */
-  --tile-w: 48px;
-  --tile-h: 66px;
+  /* Mobile-first play tiles (narrow phones). Desktop bumps these up. */
+  --tile-w: 34px;
+  --tile-h: 48px;
   --human-tile-w: var(--tile-w);
   --human-tile-h: var(--tile-h);
   --mini-w: var(--tile-w);
   --mini-h: var(--tile-h);
-  --wall-tile-w: 14px;
-  --wall-tile-h: 20px;
+  --wall-tile-w: 10px;
+  --wall-tile-h: 14px;
   --touch: 44px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -253,7 +253,7 @@ button { font-family: inherit; }
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(64px, 20%) 1fr minmax(64px, 20%);
+  grid-template-columns: minmax(44px, 16%) 1fr minmax(44px, 16%);
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "tl top tr"
@@ -423,8 +423,8 @@ button { font-family: inherit; }
 /* Center tile wall — clean square, no jagged overlaps */
 .tile-wall {
   position: relative;
-  width: min(200px, 52vw);
-  height: min(200px, 52vw);
+  width: min(140px, 42vw);
+  height: min(140px, 42vw);
   margin: 0 auto;
   z-index: 0;
   pointer-events: none;
@@ -695,11 +695,14 @@ button { font-family: inherit; }
 .hand-row {
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   flex-wrap: nowrap;
   min-height: var(--tile-h);
-  padding-top: 18px;
-  overflow: visible;
+  padding-top: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 .actions {
   display: flex;
@@ -921,14 +924,71 @@ button { font-family: inherit; }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --tile-w: 42px;
-    --tile-h: 58px;
-    --wall-tile-w: 12px;
-    --wall-tile-h: 17px;
+    --tile-w: 30px;
+    --tile-h: 42px;
+    --wall-tile-w: 9px;
+    --wall-tile-h: 13px;
   }
-  .tile-wall { width: min(180px, 52vw); height: min(180px, 52vw); }
-  .dock-top .avatar-ring { width: 80px; height: 80px; }
+  .tile-wall { width: min(120px, 38vw); height: min(120px, 38vw); }
+  .dock-top .avatar-ring { width: 64px; height: 64px; }
 }
+
+/* Mobile: keep dock compact — face toggle as tiny chips */
+@media (max-width: 719px) {
+  :root {
+    --tile-w: 34px;
+    --tile-h: 48px;
+    --wall-tile-w: 10px;
+    --wall-tile-h: 14px;
+  }
+  .dock-top {
+    gap: 6px;
+    align-items: flex-end;
+  }
+  .dock-top .avatar-ring {
+    width: 72px;
+    height: 72px;
+  }
+  .dock-top .face-toggle {
+    transform: scale(0.9);
+    transform-origin: center top;
+  }
+  .dock-top .avatar-meta {
+    max-width: 78px;
+  }
+  .dock-play {
+    max-width: calc(100% - 86px);
+  }
+  .pos-bottom .melds,
+  .pos-bottom .river {
+    gap: 2px;
+    max-width: 100%;
+  }
+  .pos-bottom .river {
+    max-height: calc(var(--tile-h) * 2.2);
+    overflow: hidden;
+  }
+  .seat.pos-bottom {
+    padding: 2px 4px;
+    gap: 2px;
+  }
+  .avatar-ring { width: 40px; height: 40px; }
+  .actions {
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .act {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .tile-wall { width: min(140px, 42vw); height: min(140px, 42vw); gap: 3px; }
+  .last-discard-slot { min-height: 52px; }
+  .table {
+    grid-template-columns: minmax(40px, 15%) 1fr minmax(40px, 15%);
+    grid-template-rows: minmax(48px, auto) 1fr minmax(52px, auto);
+  }
+}
+
 
 .modal-hero { display:flex; justify-content:center; margin-bottom: 8px; }
 .avatar.hero {
@@ -1491,8 +1551,8 @@ button { font-family: inherit; }
   gap: 4px;
 }
 .dock-top .avatar-ring {
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
 }
 .dock-top .avatar-meta {
   align-items: center;
@@ -1559,4 +1619,13 @@ button { font-family: inherit; }
 }
 .shop-char-full .face-toggle {
   margin: 6px auto 0;
+}
+
+.act.next-round-dock {
+  flex: 1;
+  max-width: 280px;
+  min-height: 48px;
+  font-size: 15px;
+  background: linear-gradient(180deg, #e7c36a, #c9a24a);
+  color: #1a1208;
 }
