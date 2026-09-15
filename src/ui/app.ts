@@ -16,7 +16,7 @@ import {
   nextHand,
   resetTable,
 } from "../game/engine";
-import { dongbeiFlags, selfTestWin } from "../game/win";
+import { selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
 import { getLang, loadLang, setLang, getTips, loadTips, setTips, t, type Lang } from "./i18n";
@@ -309,23 +309,6 @@ function turnButtons(): string {
   return btns.join("");
 }
 
-function reqHud(): string {
-  const p = state.players[0]!;
-  const f = dongbeiFlags(p.hand, p.melds);
-  const keOk = f.hasKe || f.dragonEyes;
-  const items = [
-    [f.opened, t("reqOpen"), "Open"],
-    [keOk, f.hasKe ? t("reqKe") : t("reqDragonEyes"), "Pung"],
-    [f.yaojiu, t("reqYao"), "1/9"],
-    [f.threeSuits, t("reqSuits"), "3 suits"],
-  ] as const;
-  return `<div class="reqs">${items
-    .map(
-      ([ok, zh]) =>
-        `<span class="req ${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${zh}</span>`,
-    )
-    .join("")}</div>`;
-}
 
 function payoutLines(): string {
   const w = state.winResult;
@@ -553,11 +536,9 @@ export function render(): void {
         </div>
       </div>
       <div class="dock">
-        ${reqHud()}
         <div class="melds-row">${meldHtml(state.players[0]!)}</div>
         <div class="hand-row">${humanHandHtml()}</div>
         <div class="actions">${turnButtons()}</div>
-        <div class="hint">${t("hint")}</div>
       </div>
     </div>
     ${overlay()}
