@@ -183,10 +183,10 @@ button { font-family: inherit; }
 .pos-left .avatar-wrap { flex-direction: column; align-items: center; }
 .pos-right .avatar-wrap { flex-direction: column; align-items: center; }
 .avatar-ring {
-  width: 56px;
-  height: 56px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
-  padding: 3px;
+  padding: 4px;
   background: linear-gradient(145deg, #f0d78a, #8a6a28 55%, #5a3a14);
   box-shadow: 0 4px 10px rgba(0,0,0,.45);
   flex-shrink: 0;
@@ -225,7 +225,7 @@ button { font-family: inherit; }
   opacity: 0.85;
 }
 .avatar-name {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   padding: 2px 8px;
   border-radius: 999px;
@@ -253,7 +253,7 @@ button { font-family: inherit; }
   color: #1a1208;
 }
 @media (max-width: 720px) {
-  .avatar-ring { width: 42px; height: 42px; }
+  .avatar-ring { width: 68px; height: 68px; }
   .avatar-name { font-size: 10px; }
 }
 
