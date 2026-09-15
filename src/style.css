@@ -13,7 +13,7 @@
   --tile-edge: #cfc3a4;
   --shadow: rgba(0, 0, 0, 0.45);
   /* Mobile-first: same face art as desktop; size fits a 14-tile hand + dock. */
-  --dock-avatar: 64px;
+  --dock-avatar: 84px;
   --tile-w: min(42px, calc((100vw - var(--dock-avatar) - 28px) / 14.6));
   --tile-h: calc(var(--tile-w) * 1.375);
   --human-tile-w: var(--tile-w);
@@ -902,7 +902,7 @@ button { font-family: inherit; }
 /* Phone + short phone: keep everything inside the viewport */
 @media (max-width: 719px) {
   :root {
-    --dock-avatar: 64px;
+    --dock-avatar: 84px;
   }
   .brand h1 { font-size: 15px; max-width: 28vw; }
   .topbar { gap: 6px; padding-left: max(8px, var(--safe-left)); padding-right: max(8px, var(--safe-right)); }
@@ -945,8 +945,8 @@ button { font-family: inherit; }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --dock-avatar: 56px;
-    --tile-w: min(36px, calc((100vw - var(--dock-avatar) - 24px) / 14.6));
+    --dock-avatar: 72px;
+    --tile-w: min(38px, calc((100vw - var(--dock-avatar) - 24px) / 14.6));
     --tile-h: calc(var(--tile-w) * 1.375);
   }
   .tile-wall {
