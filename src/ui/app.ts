@@ -463,10 +463,8 @@ function langToggle(): string {
 
 function tipsToggle(): string {
   const on = getTips();
-  return `<div class="tips-toggle" role="group" aria-label="AI tips">
-    <span class="tips-label">${t("tips")}</span>
-    <button type="button" class="tips-btn ${on ? "on" : ""}" data-act="tips" data-on="1">${t("tipsOn")}</button>
-    <button type="button" class="tips-btn ${!on ? "on" : ""}" data-act="tips" data-on="0">${t("tipsOff")}</button>
+  return `<div class="tips-toggle dock-tips" role="group" aria-label="AI tips">
+    <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}">${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}</button>
   </div>`;
 }
 
@@ -475,11 +473,6 @@ export function render(): void {
   const last = state.lastDiscard;
   const playing = state.phase !== "bet";
   const wallN = playing ? visualWallCount() : "—";
-  const statusMsg = dealReveal
-    ? t("dealing")
-    : getLang() === "zh"
-      ? state.messageZh
-      : state.message;
 
   // Full-screen park shop — hide the entire mahjong board while open.
   if (shopOpen) {
@@ -511,7 +504,6 @@ export function render(): void {
       </div>
       <div class="toolbar">
         ${langToggle()}
-        ${tipsToggle()}
         <button class="btn ghost" data-act="mute">${mute}</button>
         <button class="btn ghost" data-act="shop">${t("shop")}</button>
         <button class="btn ghost" data-act="next">${t("next")}</button>
@@ -537,7 +529,7 @@ export function render(): void {
       <div class="dock">
         <div class="melds-row">${meldHtml(state.players[0]!)}</div>
         <div class="hand-row">${humanHandHtml()}</div>
-        <div class="actions">${turnButtons()}</div>
+        <div class="actions">${turnButtons()}${tipsToggle()}</div>
       </div>
     </div>
     ${overlay()}
