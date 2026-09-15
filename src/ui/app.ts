@@ -203,9 +203,21 @@ function playerAvatarSrc(): string {
   return getAFace() === "camera" ? "avatars/player-face.png?v=face1" : "avatars/player.png?v=a1";
 }
 
-function playerFullSrc(_prop?: ShopPropId | null): string {
-  // Pose swaps for held items come later; face toggle always applies to base.
+const HOLD_POSE_V = "hold1";
+
+function playerFullSrc(prop?: ShopPropId | null): string {
+  // Holding an item uses a gripped full-body pose (overrides face toggle for now).
+  if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
+  if (prop === "cigarette") return `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
   return getAFace() === "camera" ? "chars/player-face.png?v=face1" : "chars/player-full.png?v=cut2";
+}
+
+function oppositeFullSrc(prop?: ShopPropId | null): string {
+  if (prop === "beer") return `chars/opposite-hold-beer.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/opposite-hold-coffee.png?v=${HOLD_POSE_V}`;
+  if (prop === "cigarette") return `chars/opposite-hold-cigarette.png?v=${HOLD_POSE_V}`;
+  return "chars/opposite-full.png?v=cut2";
 }
 
 function faceToggleHtml(where: "dock" | "shop"): string {
@@ -412,7 +424,7 @@ function shopOverlay(): string {
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/opposite-full.png?v=cut2" alt="${t("seatOpp")}" draggable="false" />
+          <img class="shop-full" src="${oppositeFullSrc(seatProp[2]?.id)}" alt="${t("seatOpp")}" draggable="false" />
         </div>
         <span class="shop-char-label">${t("seatOpp")}</span>
       </div>
