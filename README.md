@@ -1,6 +1,6 @@
-# AA Mahjong · 东北麻将
+# AA 麻将 · 东北麻将
 
-A browser game of **Northeast China mahjong** (东北麻将, 辽宁 / 沈阳常见桌规) for 4 players: you plus 3 simple AIs. Static SPA, no backend.
+**AA 麻将** — a browser game of **Northeast China mahjong** (东北麻将, 辽宁 / 沈阳常见桌规) for 4 players: you plus 3 simple AIs. Static SPA, no backend.
 
 This is **not** Hong Kong / Cantonese scoring. v1 follows a common Shenyang-style table: you must **open**, hold a **pung**, include a **terminal or honor**, and use **all three suits**.
 
