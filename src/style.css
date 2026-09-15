@@ -300,8 +300,8 @@ button { font-family: inherit; }
 /* Center tile wall */
 .tile-wall {
   position: relative;
-  width: min(280px, 42vw);
-  height: min(280px, 42vw);
+  width: min(420px, 58vw);
+  height: min(420px, 58vw);
   margin: 0 auto;
   z-index: 2;
 }
@@ -345,7 +345,7 @@ button { font-family: inherit; }
   align-items: center;
 }
 .wall-stack .tile.wall-tile + .tile.wall-tile {
-  margin-bottom: -16px;
+  margin-bottom: -34px;
 }
 .wall-top {
   top: 4%;
@@ -377,12 +377,12 @@ button { font-family: inherit; }
 .wall-left .wall-stack .tile.wall-tile + .tile.wall-tile,
 .wall-right .wall-stack .tile.wall-tile + .tile.wall-tile {
   margin-bottom: 0;
-  margin-left: -12px;
+  margin-left: -26px;
 }
 .tile.wall-tile {
-  --w: 18px;
-  --h: 24px;
-  border-radius: 3px;
+  --w: 36px;
+  --h: 50px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 .status {
@@ -780,8 +780,8 @@ button { font-family: inherit; }
   }
   .brand h1 { font-size: 16px; }
   .meta { font-size: 11px; gap: 8px; }
-  .tile-wall { width: min(180px, 48vw); height: min(180px, 48vw); }
-  .tile.wall-tile { --w: 12px; --h: 16px; }
+  .tile-wall { width: min(300px, 72vw); height: min(300px, 72vw); }
+  .tile.wall-tile { --w: 28px; --h: 40px; }
   .pos-left .backs, .pos-right .backs { max-height: 180px; }
   .table { grid-template-columns: minmax(72px, 22%) 1fr minmax(72px, 22%); }
 }
@@ -793,7 +793,7 @@ button { font-family: inherit; }
     --mini-w: 36px;
     --mini-h: 50px;
   }
-  .tile-wall { width: min(220px, 40vw); height: min(220px, 40vw); }
+  .tile-wall { width: min(360px, 52vw); height: min(360px, 52vw); }
 }
 
 @media (max-height: 680px) {
@@ -803,7 +803,7 @@ button { font-family: inherit; }
     --mini-w: 32px;
     --mini-h: 44px;
   }
-  .tile-wall { width: min(170px, 38vw); height: min(170px, 38vw); }
+  .tile-wall { width: min(280px, 70vw); height: min(280px, 70vw); }
 }
 
 .modal-hero { display:flex; justify-content:center; margin-bottom: 8px; }
