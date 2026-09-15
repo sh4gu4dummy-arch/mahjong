@@ -12,11 +12,15 @@
   --tile-face: #fffaf0;
   --tile-edge: #cfc3a4;
   --shadow: rgba(0, 0, 0, 0.45);
-  /* Mobile-first tile sizes; desktop scales up via min-width queries */
-  --human-tile-w: 44px;
-  --human-tile-h: 60px;
-  --mini-w: 28px;
-  --mini-h: 38px;
+  /* One play-tile size for hand + board (river/melds). Wall stays smaller. */
+  --tile-w: 48px;
+  --tile-h: 66px;
+  --human-tile-w: var(--tile-w);
+  --human-tile-h: var(--tile-h);
+  --mini-w: var(--tile-w);
+  --mini-h: var(--tile-h);
+  --wall-tile-w: 14px;
+  --wall-tile-h: 20px;
   --touch: 44px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -387,10 +391,11 @@ button { font-family: inherit; }
 .pos-left .melds, .pos-right .melds,
 .pos-left .river, .pos-right .river {
   flex-direction: column;
-  max-height: 220px;
+  max-height: min(42vh, 360px);
   flex-wrap: wrap;
+  overflow: visible;
 }
-.pos-left .river, .pos-right .river { max-height: 180px; }
+.pos-left .river, .pos-right .river { max-height: min(38vh, 320px); }
 
 .center {
   display: flex;
@@ -447,11 +452,13 @@ button { font-family: inherit; }
 .wall-left { grid-area: left; flex-direction: column; }
 .wall-right { grid-area: right; flex-direction: column; }
 .wall-side .tile.wall-tile {
-  margin: 0 !important;
+  --w: var(--wall-tile-w);
+  --h: var(--wall-tile-h);
+  flex-shrink: 0;
 }
 .tile.wall-tile {
-  --w: 16px;
-  --h: 22px;
+  --w: var(--wall-tile-w);
+  --h: var(--wall-tile-h);
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -481,8 +488,8 @@ button { font-family: inherit; }
 
 /* ===== Tiles ===== */
 .tile {
-  --w: var(--mini-w);
-  --h: var(--mini-h);
+  --w: var(--tile-w);
+  --h: var(--tile-h);
   width: var(--w);
   height: var(--h);
   border: none;
@@ -529,7 +536,8 @@ button { font-family: inherit; }
   height: 100%;
   display: block;
   pointer-events: none;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 4px;
   position: relative;
   z-index: 1;
@@ -658,6 +666,7 @@ button { font-family: inherit; }
   background: linear-gradient(180deg, #2a160a, #140c08);
   border-top: 1px solid #6b4a22;
   box-shadow: 0 -8px 24px rgba(0,0,0,.35);
+  overflow: visible;
 }
 .melds-row {
   display: flex;
@@ -670,8 +679,10 @@ button { font-family: inherit; }
   display: flex;
   justify-content: center;
   gap: 4px;
-  flex-wrap: wrap;
-  min-height: var(--human-tile-h);
+  flex-wrap: nowrap;
+  min-height: var(--tile-h);
+  padding-top: 18px;
+  overflow: visible;
 }
 .actions {
   display: flex;
@@ -840,16 +851,16 @@ button { font-family: inherit; }
 }
 
 /* Compact side rivers on phone */
-.pos-left .backs, .pos-right .backs { max-height: 160px; }
-.pos-left .river, .pos-right .river { max-height: 140px; }
+.pos-left .backs, .pos-right .backs { max-height: min(36vh, 280px); }
+.pos-left .river, .pos-right .river { max-height: min(34vh, 260px); }
 
 /* ===== Desktop / wide: scale up gracefully ===== */
 @media (min-width: 720px) {
   :root {
-    --human-tile-w: 60px;
-    --human-tile-h: 82px;
-    --mini-w: 36px;
-    --mini-h: 50px;
+    --tile-w: 60px;
+    --tile-h: 82px;
+    --wall-tile-w: 18px;
+    --wall-tile-h: 26px;
   }
   .brand h1 { font-size: 20px; max-width: none; }
   .topbar {
@@ -868,40 +879,38 @@ button { font-family: inherit; }
   .avatar-ring { width: 80px; height: 80px; }
   .avatar-name { font-size: 12px; }
   .tile-wall { width: min(320px, 42vw); height: min(320px, 42vw); }
-  .tile.wall-tile { --w: 20px; --h: 28px; }
   .table {
     grid-template-columns: minmax(88px, 18%) 1fr minmax(88px, 18%);
   }
   .table-frame { padding: 10px; border-radius: 18px; }
   .stage { padding: 8px 10px 0; }
   .act { font-size: 14px; padding: 8px 16px; }
-  .dock-top .avatar-ring { width: 68px; height: 68px; }
+  .dock-top .avatar-ring { width: 96px; height: 96px; }
 }
 
 @media (min-width: 1024px) {
   :root {
-    --human-tile-w: 72px;
-    --human-tile-h: 98px;
-    --mini-w: 42px;
-    --mini-h: 58px;
+    --tile-w: 68px;
+    --tile-h: 92px;
+    --wall-tile-w: 20px;
+    --wall-tile-h: 28px;
   }
   .brand h1 { font-size: 22px; }
   .avatar-ring { width: 92px; height: 92px; }
   .tile-wall { width: min(360px, 40vw); height: min(360px, 40vw); }
-  .tile.wall-tile { --w: 22px; --h: 30px; }
-  .dock-top .avatar-ring { width: 72px; height: 72px; }
+  .dock-top .avatar-ring { width: 108px; height: 108px; }
   .meta { font-size: 13px; gap: 14px; }
 }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --human-tile-w: 40px;
-    --human-tile-h: 54px;
-    --mini-w: 24px;
-    --mini-h: 34px;
+    --tile-w: 42px;
+    --tile-h: 58px;
+    --wall-tile-w: 12px;
+    --wall-tile-h: 17px;
   }
   .tile-wall { width: min(180px, 52vw); height: min(180px, 52vw); }
-  .dock-top .avatar-ring { width: 48px; height: 48px; }
+  .dock-top .avatar-ring { width: 80px; height: 80px; }
 }
 
 .modal-hero { display:flex; justify-content:center; margin-bottom: 8px; }
@@ -1446,7 +1455,7 @@ button { font-family: inherit; }
 .wallet-delta.down { color: #f5a6a6; }
 
 
-/* Human dock: keep A avatar visible beside the hand */
+/* Human dock: keep A avatar visible beside the hand — large, not a stamp */
 .dock-top {
   display: flex;
   align-items: flex-end;
@@ -1455,6 +1464,7 @@ button { font-family: inherit; }
   width: 100%;
   max-width: 1100px;
   margin: 0 auto 4px;
+  overflow: visible;
 }
 .dock-top .avatar-wrap {
   flex-direction: column;
@@ -1462,8 +1472,8 @@ button { font-family: inherit; }
   flex-shrink: 0;
 }
 .dock-top .avatar-ring {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
 }
 .dock-play {
   flex: 1;
@@ -1471,5 +1481,5 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: visible;
 }
-.dock-top .avatar-ring { width: 52px; height: 52px; }
