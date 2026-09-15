@@ -1122,23 +1122,42 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  max-width: min(280px, 36vw);
+  max-width: min(300px, 38vw);
+  align-self: flex-end;
 }
 .shop-char-body {
   position: relative;
   width: min(260px, 34vw);
   filter: drop-shadow(0 18px 28px rgba(0,0,0,.55));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 .shop-full {
-  width: 100%;
+  width: auto;
   height: auto;
-  max-height: min(72vh, 720px);
   object-fit: contain;
   object-position: bottom center;
   display: block;
   user-select: none;
   pointer-events: none;
+}
+/* Petite girl vs taller opposite male — bottoms aligned */
+.shop-char-full.you .shop-full {
+  height: 58vh;
+  max-height: 580px;
+}
+.shop-char-full.opp .shop-full {
+  height: 70vh;
+  max-height: 700px;
+}
+.shop-char-full.you .shop-char-body {
+  width: min(220px, 28vw);
+}
+.shop-char-full.opp .shop-char-body {
+  width: min(280px, 36vw);
 }
 .shop-char-label {
   font-size: 13px;
@@ -1245,7 +1264,13 @@ button { font-family: inherit; }
     padding-bottom: 8px;
     align-items: flex-end;
   }
-  .shop-full {
-    max-height: min(42vh, 420px);
+  .shop-char-full.you .shop-full {
+    height: 34vh;
+    max-height: 320px;
+  }
+  .shop-char-full.opp .shop-full {
+    height: 42vh;
+    max-height: 400px;
   }
 }
+

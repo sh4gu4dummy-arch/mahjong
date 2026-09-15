@@ -364,14 +364,14 @@ function shopOverlay(): string {
     <div class="shop-stage">
       <div class="shop-char-full you">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/player-full.png" alt="${t("seatYou")}" draggable="false" />
+          <img class="shop-full" src="chars/player-full.png?v=tall1" alt="${t("seatYou")}" draggable="false" />
           ${handProp(0, true)}
         </div>
         <span class="shop-char-label">${t("seatYou")}</span>
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/opposite-full.png" alt="${t("seatOpp")}" draggable="false" />
+          <img class="shop-full" src="chars/opposite-full.png?v=tall1" alt="${t("seatOpp")}" draggable="false" />
           ${handProp(2, true)}
         </div>
         <span class="shop-char-label">${t("seatOpp")}</span>
