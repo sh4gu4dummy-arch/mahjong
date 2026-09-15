@@ -20,7 +20,7 @@ function warmImages(): void {
     "avatars/right.png?v=l1",
     "avatars/opposite.png?v=j2",
     "avatars/left.png?v=c2",
-    "tiles/Back.svg?v=green2",
+    "tiles/Back.png?v=png2",
     "chars/player-full.png?v=cut2",
     "chars/opposite-full.png?v=cut2",
     "bg/park.png",

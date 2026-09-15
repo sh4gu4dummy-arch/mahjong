@@ -32,7 +32,7 @@ export function tileAssetFile(tile: Tile): string {
 export function tileFaceSvg(tile: Tile): string {
   const file = tileAssetFile(tile);
   const label = ARIA[tile.kind] ?? tile.kind;
-  return `<img class="face-img" src="tiles/${file}.svg" alt="${label}" draggable="false" decoding="async" />`;
+  return `<img class="face-img" src="tiles/${file}.png?v=png2" alt="${label}" draggable="false" decoding="async" />`;
 }
 
 export function tileCssClass(tile: Tile): string {
