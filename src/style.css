@@ -81,7 +81,30 @@ button { font-family: inherit; }
   justify-content: center;
 }
 .meta b { color: var(--gold); font-weight: 700; }
-.toolbar { display: flex; gap: 8px; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.topbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.btn.shop-btn {
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  background: linear-gradient(180deg, #efd48a, #c9a24a 55%, #8a6a28);
+  color: #1a1208;
+  border: 2px solid #fff1c2;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.35) inset;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.btn.shop-btn:hover { filter: brightness(1.1); }
 .btn {
   background: linear-gradient(180deg, #c9a24a, #8a6a28);
   color: #1a1208;
@@ -325,26 +348,12 @@ button { font-family: inherit; }
 .wall-bottom { grid-area: bottom; flex-direction: row; }
 .wall-left { grid-area: left; flex-direction: column; }
 .wall-right { grid-area: right; flex-direction: column; }
-.wall-stack {
-  position: relative;
-  width: 26px;
-  height: 36px;
-  flex-shrink: 0;
-}
-.wall-stack .tile.wall-tile {
-  position: absolute;
-  left: 0;
-  bottom: 0;
+.wall-side .tile.wall-tile {
   margin: 0 !important;
 }
-.wall-stack .tile.wall-tile.layer-1 {
-  left: 3px;
-  bottom: 5px;
-  z-index: 1;
-}
 .tile.wall-tile {
-  --w: 26px;
-  --h: 36px;
+  --w: 22px;
+  --h: 30px;
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -432,47 +441,36 @@ button { font-family: inherit; }
 .tile.dragon-r, .tile.dragon-g, .tile.dragon-w {
   color: var(--ink);
 }
-.tile.back .face-img,
-.tile.back .face-svg { display: none; }
-
 .tile.back {
+  /* Cream bevel frame; face is FluffyStuff Back.svg */
   background:
-    linear-gradient(145deg, rgba(255,255,255,.08), transparent 40%),
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 7px,
-      rgba(0,40,20,.22) 7px 8px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 7px,
-      rgba(0,40,20,.22) 7px 8px
-    ),
-    radial-gradient(ellipse at 30% 25%, #2d8a55 0%, transparent 55%),
-    linear-gradient(160deg, #1a7a48 0%, #0d4a2c 55%, #08301c 100%);
+    linear-gradient(165deg, #fffef9 0%, #f8f0dc 42%, #e8d9b8 100%);
   box-shadow:
-    0 1px 0 rgba(255,255,255,.12) inset,
-    0 0 0 1px #0a2e1c,
-    1px 1px 0 #072016,
-    2px 3px 0 #04140e,
-    2px 4px 8px rgba(0,0,0,.45);
+    0 1.5px 0 rgba(255,255,255,.85) inset,
+    0 -1px 0 rgba(120,100,60,.18) inset,
+    1px 0 0 rgba(255,255,255,.35) inset,
+    -1px 0 0 rgba(90,70,40,.12) inset,
+    0 0 0 1px #c4b48a,
+    1px 1px 0 #a89468,
+    2px 3px 0 #7a6848,
+    3px 5px 10px rgba(0,0,0,.42);
   overflow: hidden;
 }
-.tile.back .glyph { display: none; }
-.tile.back::after {
-  content: "";
-  position: absolute;
-  width: 58%;
-  height: 66%;
-  border: 1.5px solid rgba(212, 175, 103, 0.42);
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
-  z-index: 2;
+.tile.back .face-img.back-face,
+.tile.back .face-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  z-index: 1;
 }
+.tile.back .glyph { display: none; }
+.tile.back::after { display: none; content: none; }
 .tile.back::before {
   box-shadow:
-    0 1px 0 rgba(255,255,255,.1) inset,
-    0 0 0 1px rgba(255,255,255,.05) inset;
+    0 1px 0 rgba(255,255,255,.55) inset,
+    0 0 0 1px rgba(255,255,255,.12) inset;
 }
 
 .tile.last {
@@ -1270,4 +1268,28 @@ button { font-family: inherit; }
   background: linear-gradient(180deg, #3a9a6a, #2a7050);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(126, 255, 180, 0.5), 0 4px 12px rgba(0,0,0,.35);
+}
+
+
+/* White dragon (白板) — face is nearly blank; draw a clear blue frame so it doesn't look broken */
+.tile.dragon-w {
+  box-shadow:
+    0 1.5px 0 rgba(255,255,255,.85) inset,
+    0 0 0 1px #c4b48a,
+    1px 1px 0 #a89468,
+    2px 3px 0 #7a6848,
+    2px 4px 8px rgba(0,0,0,.35);
+}
+.tile.dragon-w::after {
+  content: "";
+  position: absolute;
+  inset: 14% 16%;
+  border: 2.5px solid #2a4a8a;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(42, 74, 138, 0.25);
+  pointer-events: none;
+  z-index: 3;
+}
+.tile.dragon-w .face-img {
+  opacity: 1;
 }

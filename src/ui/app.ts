@@ -95,7 +95,7 @@ const SEAT_POS = ["bottom", "right", "top", "left"] as const;
 const SEAT_AVATAR = [
   "avatars/player.png?v=a1",
   "avatars/right.png?v=l1",
-  "avatars/opposite.png?v=j1",
+  "avatars/opposite.png?v=j2",
   "avatars/left.png?v=c2",
 ] as const;
 
@@ -150,18 +150,23 @@ function tileEl(
   ]
     .filter(Boolean)
     .join(" ");
-  const face = opts.back ? "" : tileFaceSvg(tile);
+  const face = opts.back ? backFaceHtml() : tileFaceSvg(tile);
   if (opts.size === "hand") {
     const badge = opts.tip ? `<span class="tip-badge" aria-hidden="true">💡</span>` : "";
-    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}" ${opts.tip ? 'aria-label="AI tip"' : ""}>${face}${badge}</button>`;
+    const tipAria = opts.tip ? ` aria-label="${t("tipAria")}"` : "";
+    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}"${tipAria}>${face}${badge}</button>`;
   }
   return `<span class="${cls}" data-id="${tile.id}">${face}</span>`;
+}
+
+function backFaceHtml(): string {
+  return `<img class="face-img back-face" src="tiles/Back.svg" alt="" draggable="false" decoding="async" aria-hidden="true" />`;
 }
 
 function backs(n: number, arriving = false): string {
   return Array.from({ length: n }, (_, i) => {
     const last = arriving && i === n - 1 ? " arriving" : "";
-    return `<span class="tile back${last}"></span>`;
+    return `<span class="tile back${last}">${backFaceHtml()}</span>`;
   }).join("");
 }
 
@@ -252,21 +257,13 @@ function visualWallCount(): number {
 }
 
 function wallSideHtml(count: number, side: string): string {
-  // Two-high stacks with clean spacing (no overlapping neighbors).
-  const stacks = Math.ceil(count / 2);
-  const maxShow = 14;
-  const show = Math.min(stacks, maxShow);
-  const items: string[] = [];
-  for (let s = 0; s < show; s++) {
-    const rem = Math.max(0, count - s * 2);
-    const n = Math.min(2, rem);
-    if (n <= 0) break;
-    const layers = Array.from({ length: n }, (_, i) =>
-      `<span class="tile back wall-tile layer-${i}"></span>`,
-    ).join("");
-    items.push(`<div class="wall-stack h-${n}">${layers}</div>`);
-  }
-  return `<div class="wall-side wall-${side}" style="--stacks:${show}">${items.join("")}</div>`;
+  // Single-layer clean wall: one row of backs per side (no 2-high offset stacks).
+  const maxShow = 17;
+  const show = Math.min(Math.max(0, count), maxShow);
+  const items = Array.from({ length: show }, () =>
+    `<span class="tile back wall-tile">${backFaceHtml()}</span>`,
+  ).join("");
+  return `<div class="wall-side wall-${side}" style="--n:${show}">${items}</div>`;
 }
 
 function tileWallHtml(): string {
@@ -296,7 +293,7 @@ function flyOverlay(): string {
   const face =
     flyDraw.seat === 0 && flyDraw.tile
       ? tileEl(flyDraw.tile, { size: "hand", drawn: true })
-      : `<span class="tile back hand-tile"></span>`;
+      : `<span class="tile back hand-tile">${backFaceHtml()}</span>`;
   return `<div class="fly-layer"><div class="fly-tile to-${pos}" data-k="${flyDraw.key}">${face}</div></div>`;
 }
 
@@ -322,25 +319,24 @@ function claimButtons(): string {
 }
 
 function turnButtons(): string {
-  if (dealReveal || busy) {
-    if (state.phase === "claim" && !dealReveal) return claimButtons();
-    return "";
-  }
-  if (state.phase !== "discard" || state.current !== 0) {
-    if (state.phase === "claim") return claimButtons();
-    return "";
-  }
+  // Always keep Discard + Sort in the dock so the bar doesn't jump.
+  const myDiscard = !dealReveal && !busy && state.phase === "discard" && state.current === 0;
   const btns: string[] = [];
-  if (canSelfWin(state, 0)) btns.push(`<button class="act win" data-act="self-win">${t("selfWin")}</button>`);
-  for (const k of humanKongOptions(state)) {
-    btns.push(
-      `<button class="act kong" data-act="self-kong" data-kind="${k.kind}" data-mode="${k.mode}">${t("kong")}</button>`,
-    );
+  if (myDiscard) {
+    if (canSelfWin(state, 0)) btns.push(`<button class="act win" data-act="self-win">${t("selfWin")}</button>`);
+    for (const k of humanKongOptions(state)) {
+      btns.push(
+        `<button class="act kong" data-act="self-kong" data-kind="${k.kind}" data-mode="${k.mode}">${t("kong")}</button>`,
+      );
+    }
   }
+  if (!dealReveal && state.phase === "claim") btns.push(claimButtons());
+  const canDiscard = myDiscard && selected !== null;
+  const canSort = myDiscard;
   btns.push(
-    `<button class="act discard" data-act="discard" ${selected === null ? "disabled" : ""}>${t("discard")}</button>`,
+    `<button class="act discard" data-act="discard" ${canDiscard ? "" : "disabled"}>${t("discard")}</button>`,
   );
-  btns.push(`<button class="act sort" data-act="sort">${t("sort")}</button>`);
+  btns.push(`<button class="act sort" data-act="sort" ${canSort ? "" : "disabled"}>${t("sort")}</button>`);
   return btns.join("");
 }
 
@@ -349,14 +345,14 @@ function payoutLines(): string {
   const w = state.winResult;
   if (!w) return "";
   if (!w.payouts.length) {
-    return `<p class="sub">Stake $${w.stake} · ${t("noCashMoved")}</p>`;
+    return `<p class="sub">${t("stakeAmount")} $${w.stake} · ${t("noCashMoved")}</p>`;
   }
-  const names = state.players.map((p) => p.nameZh);
+  const names = state.players.map((_, i) => seatRelLabel(i));
   const rows = w.payouts
     .map((x) => `<li><span>${names[x.from]} → ${names[x.to]}</span><span class="pts">${formatCash(x.amount)}</span></li>`)
     .join("");
   const scheme = w.selfDraw ? t("paySelf") : t("payDiscard");
-  return `<p class="sub">${scheme} · stake $${w.stake}</p><ul class="fan-list">${rows}</ul>`;
+  return `<p class="sub">${scheme} · ${t("stakeAmount")} $${w.stake}</p><ul class="fan-list">${rows}</ul>`;
 }
 
 function shopOverlay(): string {
@@ -366,8 +362,9 @@ function shopOverlay(): string {
   const items = SHOP_ITEMS.map((item) => {
     const can = cash >= item.price;
     const label = getLang() === "zh" ? `${item.emoji} ${item.nameZh}` : `${item.emoji} ${item.name}`;
+    const itemAlt = getLang() === "zh" ? item.nameZh : item.name;
     return `<div class="shop-item">
-      <img class="shop-item-img" src="${item.src}" alt="${item.name}" draggable="false" />
+      <img class="shop-item-img" src="${item.src}" alt="${itemAlt}" draggable="false" />
       <div class="shop-item-info">
         <strong>${label}</strong>
         <span>$${item.price} · ${t("shopBoth")}</span>
@@ -423,7 +420,7 @@ function overlay(): string {
       .join("");
     const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : `<p class="sub">${t("payNote")}</p>`;
     return `<div class="overlay"><div class="modal">
-      <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="You" /></div>
+      <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="${t("you")}" /></div>
       <h2>${t("dongbei")}</h2>
       <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
       <div class="bet-row">${cash === 0 ? `<span class="bet-chip on">$0</span>` : chips}</div>
@@ -444,13 +441,15 @@ function overlay(): string {
     </div></div>`;
   }
   const w = state.winResult;
-  const winner = state.players[state.winner ?? 0]!;
-  const title = state.winner === 0 ? t("youWin") : `${winner.nameZh} ${t("someoneWins")}`;
-  const how = w?.selfDraw ? t("selfDrawHow") : `${t("discardWinHow")} ${w?.loser != null ? state.players[w.loser]!.nameZh : "?"}`;
+  const winnerIdx = state.winner ?? 0;
+  const title = winnerIdx === 0 ? t("youWin") : `${seatRelLabel(winnerIdx)} ${t("someoneWins")}`;
+  const how = w?.selfDraw
+    ? t("selfDrawHow")
+    : `${t("discardWinHow")} · ${w?.loser != null ? seatRelLabel(w.loser) : "?"}`;
   const lines = (w?.lines ?? [])
     .map((l) => {
-      const name = getLang() === "zh" ? `${l.nameZh} · ${l.name}` : `${l.name} · ${l.nameZh}`;
-      return `<li><span>${name}</span><span class="pts">${l.fan ? l.fan + (getLang() === "zh" ? " 番" : " fan") : "✓"}</span></li>`;
+      const name = getLang() === "zh" ? l.nameZh : l.name;
+      return `<li><span>${name}</span><span class="pts">${l.fan ? `${l.fan} ${t("fanUnit")}` : "✓"}</span></li>`;
     })
     .join("");
   const tiles = sortTiles(w?.concealed ?? []).map((tile) => tileEl(tile)).join("");
@@ -490,7 +489,7 @@ function humanHandHtml(): string {
 
 function langToggle(): string {
   const cur = getLang();
-  return `<div class="lang-toggle" role="group" aria-label="Language">
+  return `<div class="lang-toggle" role="group" aria-label="${t("language")}">
     <button type="button" class="lang-btn ${cur === "en" ? "on" : ""}" data-act="lang" data-lang="en">EN</button>
     <button type="button" class="lang-btn ${cur === "zh" ? "on" : ""}" data-act="lang" data-lang="zh">中文</button>
   </div>`;
@@ -499,7 +498,7 @@ function langToggle(): string {
 function tipsToggle(): string {
   const on = getTips();
   const auto = getAutoTips();
-  return `<div class="tips-toggle dock-tips" role="group" aria-label="AI tips">
+  return `<div class="tips-toggle dock-tips" role="group" aria-label="${t("tipsAria")}">
     <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}">${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}</button>
     <button type="button" class="act auto-act ${auto ? "on" : ""}" data-act="auto-tips" data-on="${auto ? "0" : "1"}">${t("auto")} · ${auto ? t("autoOn") : t("autoOff")}</button>
   </div>`;
@@ -514,12 +513,14 @@ export function render(): void {
   if (shopOpen) {
     root.innerHTML = `
       <header class="topbar shop-topbar">
-        <div class="brand"><h1>AA 麻将</h1><span class="zh">${t("shopTitle")}</span></div>
-        <div class="meta">
-          <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+        <div class="brand"><h1>${t("brand")}</h1><span class="zh">${t("shopTitle")}</span></div>
+        <div class="topbar-center">
+          <div class="meta">
+            <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+          </div>
+          ${langToggle()}
         </div>
         <div class="toolbar">
-          ${langToggle()}
           <button class="btn ghost" data-act="mute">${mute}</button>
           <button class="btn" data-act="shop-close">${t("close")}</button>
         </div>
@@ -532,16 +533,18 @@ export function render(): void {
 
   root.innerHTML = `
     <header class="topbar">
-      <div class="brand"><h1>AA 麻将</h1><span class="zh">${t("dongbei")}</span></div>
-      <div class="meta">
-        <span>${t("hand")} <b>${state.handNumber}</b></span>
-        <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
-        <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+      <div class="brand"><h1>${t("brand")}</h1><span class="zh">${t("dongbei")}</span></div>
+      <div class="topbar-center">
+        <div class="meta">
+          <span>${t("hand")} <b>${state.handNumber}</b></span>
+          <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
+          <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
+        </div>
+        <button class="btn shop-btn" data-act="shop">${t("shop")}</button>
+        ${langToggle()}
       </div>
       <div class="toolbar">
-        ${langToggle()}
         <button class="btn ghost" data-act="mute">${mute}</button>
-        <button class="btn ghost" data-act="shop">${t("shop")}</button>
         <button class="btn ghost" data-act="next">${t("next")}</button>
         <button class="btn" data-act="reset">${t("reset")}</button>
       </div>

@@ -47,7 +47,7 @@ const dict = {
   drawGame: { zh: "荒庄 · 流局", en: "Draw game" },
   drawGameSub: { zh: "牌墙摸完，本局赌注不动。", en: "Wall exhausted — stakes stay." },
   nextRound: { zh: "下一局", en: "Next round" },
-  resetCash: { zh: "重置 $100", en: "Reset $100" },
+  resetCash: { zh: "现金恢复到 $100", en: "Reset cash to $100" },
   youWin: { zh: "你胡了", en: "You win" },
   someoneWins: { zh: "胡牌", en: "wins" },
   selfDrawHow: { zh: "自摸", en: "Self-draw" },
@@ -81,6 +81,12 @@ const dict = {
   auto: { zh: "自动", en: "Auto" },
   autoOn: { zh: "开", en: "ON" },
   autoOff: { zh: "关", en: "OFF" },
+  language: { zh: "语言", en: "Language" },
+  tipsAria: { zh: "AI 提示", en: "AI tips" },
+  tipAria: { zh: "AI 提示出牌", en: "AI tip" },
+  brand: { zh: "AA 麻将", en: "AA Mahjong" },
+  fanUnit: { zh: "番", en: "fan" },
+  stakeAmount: { zh: "赌注", en: "Stake" },
 } as const;
 
 export type I18nKey = keyof typeof dict;
