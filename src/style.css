@@ -238,15 +238,10 @@ button { font-family: inherit; }
 .avatar-wrap.turn .avatar-ring {
   background: linear-gradient(145deg, #fff1b0, #e0b84a, #fff1b0);
   box-shadow: 0 0 0 2px #fff6c8, 0 0 18px rgba(255, 214, 120, 0.85);
-  animation: pulse-turn 1.4s ease-in-out infinite;
 }
 .avatar-wrap.turn .avatar-name {
   background: var(--gold);
   color: #1a1208;
-}
-@keyframes pulse-turn {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
 }
 .seat.active .seat-name {
   background: var(--gold);
