@@ -530,7 +530,6 @@ export function render(): void {
             <div class="last-discard-slot">
               ${last ? `<span class="label">${t("lastDiscard")}</span>${tileEl(last, { last: true, toss: true })}` : ""}
             </div>
-            <div class="status">${statusMsg}</div>
             ${flyOverlay()}
           </div>
         </div>
