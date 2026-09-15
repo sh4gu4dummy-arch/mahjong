@@ -1,5 +1,5 @@
 import type { Claim, GameState, Player, Tile, Wind } from "../game/types";
-import { sortTiles, WIND_ZH } from "../game/tiles";
+import { sortTiles } from "../game/tiles";
 import {
   applyDiscard,
   aiPlayDiscard,
@@ -187,14 +187,13 @@ function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
   const src = SEAT_AVATAR[i]!;
   const rel = seatRelLabel(i);
-  const wind = WIND_ZH[p.seat];
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
       <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
       ${handProp(i)}
     </div>
     <div class="avatar-meta">
-      <span class="avatar-name">${rel}<span class="wind-chip" title="${wind}">${wind}</span></span>
+      <span class="avatar-name">${rel}</span>
       ${cashChip(p)}
     </div>
   </div>`;
