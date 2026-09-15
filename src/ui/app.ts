@@ -26,6 +26,7 @@ import { loadSave, saveGame } from "./persist";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** When Auto is on + Slow, stretch play timing 3× so you can watch. */
 const paced = (ms: number) => sleep(ms * (getAutoTips() ? paceFactor() : 1));
+// paceFactor: Slow ≈5× / Fast ≈0.65× of base Auto delays
 
 let state: GameState = createTable();
 let selected: number | null = null;
@@ -293,7 +294,7 @@ function wallSideHtml(count: number, side: string): string {
   return `<div class="wall-side wall-${side}" style="--n:${show}">${items}</div>`;
 }
 
-function tileWallHtml(): string {
+function tileWallHtml(last: Tile | null = null): string {
   const playing = state.phase !== "bet";
   if (!playing) {
     return `<div class="tile-wall empty">
@@ -305,10 +306,17 @@ function tileWallHtml(): string {
   const base = Math.floor(n / 4);
   const rem = n % 4;
   const counts = [0, 1, 2, 3].map((i) => base + (i < rem ? 1 : 0));
+  const mid = last
+    ? `<div class="wall-hub last-discard-slot">
+        <span class="label">${t("lastDiscard")}</span>
+        ${tileEl(last, { last: true, toss: true })}
+      </div>`
+    : `<div class="wall-hub" aria-hidden="true"></div>`;
   // Sides: bottom(East-facing), right, top, left — visual only
   return `<div class="tile-wall" aria-label="${t("wall")} ${n}">
     ${wallSideHtml(counts[2]!, "top")}
     ${wallSideHtml(counts[3]!, "left")}
+    ${mid}
     ${wallSideHtml(counts[1]!, "right")}
     ${wallSideHtml(counts[0]!, "bottom")}
   </div>`;
@@ -637,10 +645,7 @@ export function render(): void {
           ${seatHtml(1)}
           ${seatHtml(0)}
           <div class="center">
-            ${tileWallHtml()}
-            <div class="last-discard-slot">
-              ${last ? `<span class="label">${t("lastDiscard")}</span>${tileEl(last, { last: true, toss: true })}` : ""}
-            </div>
+            ${tileWallHtml(last)}
             ${flyOverlay()}
           </div>
         </div>
@@ -721,7 +726,7 @@ async function continuePlay(): Promise<void> {
     if (state.phase as string === "over") break;
     if (state.phase === "discard") {
       if (state.current === 0) break;
-      await paced(380 + Math.random() * 320);
+      await paced(520 + Math.random() * 280);
       if (my !== gen) return;
       const id = aiPlayDiscard(state);
       if (id >= 0) sfx.discard();
@@ -786,7 +791,7 @@ function scheduleAutoPlay(): void {
   if (busy || dealReveal || shopOpen) return;
   if (state.phase === "bet" || state.phase === "over") return;
 
-  const delay = (400 + Math.floor(Math.random() * 301)) * paceFactor();
+  const delay = (550 + Math.floor(Math.random() * 250)) * paceFactor();
   const token = autoToken;
 
   if (state.phase === "discard" && state.current === 0) {
@@ -949,7 +954,9 @@ function onClick(ev: Event): void {
     const p = el.dataset.pace === "slow" ? "slow" : "fast";
     setAutoPace(p as AutoPace);
     sfx.click();
+    clearAutoTimer();
     render();
+    scheduleAutoPlay();
     return;
   }
   if (act === "menu-toggle") {

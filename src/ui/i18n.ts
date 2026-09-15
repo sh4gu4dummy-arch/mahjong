@@ -217,9 +217,9 @@ export function setAutoPace(next: AutoPace): void {
   }
 }
 
-/** Multiply play delays: fast = 1× (current), slow = 3× for watching Auto. */
+/** Multiply Auto play delays: Fast is snappy, Slow is clearly watchable. */
 export function paceFactor(): number {
-  return autoPace === "slow" ? 3 : 1;
+  return autoPace === "slow" ? 5 : 0.65;
 }
 
 const FACE_KEY = "aa-mahjong-a-face";
