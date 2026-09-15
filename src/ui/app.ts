@@ -21,6 +21,7 @@ import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
 import { getLang, loadLang, setLang, getTips, loadTips, setTips, t, type Lang } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
+import { loadSave, saveGame } from "./persist";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,6 +39,24 @@ let dealReveal: [number, number, number, number] | null = null;
 /** Flying draw overlay */
 let flyDraw: { seat: number; tile: Tile | null; key: number } | null = null;
 let flyKey = 0;
+
+let saveTimer: number | null = null;
+
+function scheduleSave(): void {
+  if (saveTimer !== null) window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => {
+    saveTimer = null;
+    saveGame(state, betDraft, selected);
+  }, 150);
+}
+
+function saveNow(): void {
+  if (saveTimer !== null) {
+    window.clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  saveGame(state, betDraft, selected);
+}
 
 type ShopPropId = "coffee" | "cigarette" | "beer";
 interface ShopItem {
@@ -609,6 +628,7 @@ async function continuePlay(): Promise<void> {
   }
   if (my !== gen) return;
   busy = false;
+  scheduleSave();
   render();
 }
 
@@ -624,6 +644,7 @@ async function startDealAnimation(): Promise<void> {
   await animateDeal(my);
   if (my !== gen) return;
   busy = false;
+  scheduleSave();
   render();
   // East discard phase — human to play; no auto-continue needed
 }
@@ -665,6 +686,7 @@ function buyProp(id: ShopPropId): void {
   const nm = getLang() === "zh" ? item.nameZh : item.name;
   shopFlash = `${item.emoji} ${nm} ${t("forBoth")}`;
   sfx.claim();
+  scheduleSave();
   render();
 }
 
@@ -679,6 +701,7 @@ function goNext(): void {
   const cash = state.players[0]!.cash;
   betDraft = cash === 0 ? 0 : Math.min(betDraft || 10, cash) || Math.min(10, cash);
   sfx.click();
+  saveNow();
   render();
 }
 
@@ -692,6 +715,7 @@ function goReset(): void {
   busy = false;
   betDraft = 10;
   sfx.click();
+  saveNow();
   render();
 }
 
@@ -752,6 +776,7 @@ function onClick(ev: Event): void {
   if (act === "bet-set") {
     betDraft = Number(el.dataset.n);
     sfx.click();
+    scheduleSave();
     render();
     return;
   }
@@ -762,6 +787,7 @@ function onClick(ev: Event): void {
     beginRound(state, stake);
     selected = null;
     sfx.click();
+    scheduleSave();
     void startDealAnimation();
     return;
   }
@@ -776,6 +802,7 @@ function onClick(ev: Event): void {
     if (!state.players[0]!.hand.some((x) => x.id === id)) return;
     selected = selected === id ? null : id;
     sfx.click();
+    scheduleSave();
     render();
     return;
   }
@@ -791,11 +818,13 @@ function onClick(ev: Event): void {
     selected = null;
     applyDiscard(state, id);
     sfx.discard();
+    scheduleSave();
     void afterMove();
     return;
   }
   if (act === "self-win") {
     if (declareSelfWin(state, 0)) sfx.win();
+    scheduleSave();
     render();
     return;
   }
@@ -805,6 +834,7 @@ function onClick(ev: Event): void {
     if (declareKong(state, kind, mode)) {
       sfx.claim();
       selected = null;
+      scheduleSave();
       void afterMove();
     }
     return;
@@ -812,6 +842,7 @@ function onClick(ev: Event): void {
   if (act === "pass") {
     humanPass(state);
     sfx.click();
+    scheduleSave();
     void afterMove();
     return;
   }
@@ -820,6 +851,7 @@ function onClick(ev: Event): void {
     if (c) {
       humanClaim(state, c);
       sfx.win();
+      scheduleSave();
       render();
     }
     return;
@@ -830,6 +862,7 @@ function onClick(ev: Event): void {
       humanClaim(state, c);
       sfx.claim();
       selected = null;
+      scheduleSave();
       void afterMove();
     }
     return;
@@ -840,6 +873,7 @@ function onClick(ev: Event): void {
       humanClaim(state, c);
       sfx.claim();
       selected = null;
+      scheduleSave();
       void afterMove();
     }
     return;
@@ -850,6 +884,7 @@ function onClick(ev: Event): void {
       humanClaim(state, c);
       sfx.claim();
       selected = null;
+      scheduleSave();
       void afterMove();
     }
   }
@@ -864,6 +899,7 @@ function onDblClick(ev: Event): void {
   selected = null;
   applyDiscard(state, id);
   sfx.discard();
+  scheduleSave();
   void afterMove();
 }
 
@@ -881,9 +917,29 @@ export function start(el: HTMLElement): void {
       selected = null;
       applyDiscard(state, id);
       sfx.discard();
+      scheduleSave();
       void afterMove();
     }
   });
+
+  const saved = loadSave();
+  if (saved) {
+    state = saved.state;
+    betDraft = saved.betDraft;
+    selected = saved.selected;
+    shopOpen = false;
+    dealReveal = null;
+    flyDraw = null;
+    busy = false;
+    // Skip deal/draw anims — resume mid-hand phase as-is.
+    render();
+    // Kick AI / draw loop if we restored into an automated phase.
+    if (state.phase === "draw" || (state.phase === "discard" && state.current !== 0)) {
+      void afterMove();
+    }
+    return;
+  }
+
   render();
 }
 
