@@ -19,7 +19,7 @@ import {
 import { selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
-import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, t, type Lang, type AutoPace } from "./i18n";
+import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, getAFace, loadAFace, setAFace, t, type Lang, type AutoPace, type AFace } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
 import { loadSave, saveGame } from "./persist";
 
@@ -31,11 +31,12 @@ let state: GameState = createTable();
 let selected: number | null = null;
 let busy = false;
 let gen = 0;
-let betDraft = 10;
+let betDraft = 1;
 let root: HTMLElement;
 let shopOpen = false;
 let shopFlash = "";
 let menuOpen = false;
+let resultDismissed = false;
 
 /** UI-only dealing: how many tiles revealed per seat (engine already dealt). */
 let dealReveal: [number, number, number, number] | null = null;
@@ -190,14 +191,6 @@ function cashChip(p: Player): string {
   return `<span class="cash">${formatCash(p.cash)}</span>`;
 }
 
-function handProp(i: number, big = false): string {
-  const p = seatProp[i];
-  if (!p || p.until <= Date.now()) return "";
-  const item = SHOP_ITEMS.find((x) => x.id === p.id);
-  if (!item) return "";
-  const fading = p.until - Date.now() < 900 ? "fading" : "";
-  return `<img class="hand-prop prop-${p.id} ${big ? "big" : ""} ${fading}" src="${item.src}" alt="${item.name}" draggable="false" />`;
-}
 
 function seatRelLabel(i: number): string {
   if (i === 0) return t("seatYou");
@@ -206,18 +199,37 @@ function seatRelLabel(i: number): string {
   return t("seatLeft"); // 上家 / prev
 }
 
+function playerAvatarSrc(): string {
+  return getAFace() === "camera" ? "avatars/player-face.png?v=face1" : "avatars/player.png?v=a1";
+}
+
+function playerFullSrc(_prop?: ShopPropId | null): string {
+  // Pose swaps for held items come later; face toggle always applies to base.
+  return getAFace() === "camera" ? "chars/player-face.png?v=face1" : "chars/player-full.png?v=cut2";
+}
+
+function faceToggleHtml(where: "dock" | "shop"): string {
+  const face = getAFace();
+  return `<div class="face-toggle" role="group" aria-label="${t("faceAria")}" data-where="${where}">
+    <button type="button" class="face-btn ${face === "away" ? "on" : ""}" data-act="a-face" data-face="away">${t("faceAway")}</button>
+    <button type="button" class="face-btn ${face === "camera" ? "on" : ""}" data-act="a-face" data-face="camera">${t("faceCamera")}</button>
+  </div>`;
+}
+
 function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
-  const src = SEAT_AVATAR[i]!;
+  const src = i === 0 ? playerAvatarSrc() : SEAT_AVATAR[i]!;
   const rel = seatRelLabel(i);
+  const toggle = i === 0 ? faceToggleHtml("dock") : "";
+  // No floating prop stickers on circular avatars
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
       <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
-      ${handProp(i)}
     </div>
     <div class="avatar-meta">
       <span class="avatar-name">${rel}</span>
       ${cashChip(p)}
+      ${toggle}
     </div>
   </div>`;
 }
@@ -236,6 +248,7 @@ function seatHtml(i: number): string {
   const aiArriving = !!(flyDraw && flyDraw.seat === i && i !== 0);
   if (i === 0) {
     return `<div class="seat pos-${pos} ${act}">
+      <div class="melds">${meldHtml(p)}</div>
       <div class="river">${riverHtml(p)}</div>
     </div>`;
   }
@@ -392,15 +405,14 @@ function shopOverlay(): string {
     <div class="shop-stage">
       <div class="shop-char-full you">
         <div class="shop-char-body">
-          <img class="shop-full" src="chars/player-full.png?v=cut2" alt="${t("seatYou")}" draggable="false" />
-          ${handProp(0, true)}
+          <img class="shop-full" src="${playerFullSrc(seatProp[0]?.id)}" alt="${t("seatYou")}" draggable="false" />
         </div>
         <span class="shop-char-label">${t("seatYou")}</span>
+        ${faceToggleHtml("shop")}
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
           <img class="shop-full" src="chars/opposite-full.png?v=cut2" alt="${t("seatOpp")}" draggable="false" />
-          ${handProp(2, true)}
         </div>
         <span class="shop-char-label">${t("seatOpp")}</span>
       </div>
@@ -422,8 +434,9 @@ function overlay(): string {
   if (shopOpen) return shopOverlay();
   if (state.phase === "bet") {
     const cash = state.players[0]!.cash;
-    const presets = [5, 10, 20, 50].filter((n) => n <= cash);
+    const presets = [0, 1, 5, 10, 20, 50].filter((n) => n <= cash);
     if (cash > 0 && !presets.includes(cash) && cash < 1000) presets.push(cash);
+    if (!presets.includes(0)) presets.unshift(0);
     const clamped = Math.max(0, Math.min(betDraft, cash));
     const chips = presets
       .map(
@@ -433,22 +446,24 @@ function overlay(): string {
       .join("");
     const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : "";
     return `<div class="overlay"><div class="modal">
-      <div class="modal-hero"><img class="avatar hero" src="avatars/player.png?v=a1" alt="${t("you")}" /></div>
+      <div class="modal-hero"><img class="avatar hero" src="${playerAvatarSrc()}" alt="${t("you")}" /></div>
       <h2>${t("brand")}</h2>
       <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
-      <div class="bet-row">${cash === 0 ? `<span class="bet-chip on">$0</span>` : chips}</div>
+      <div class="bet-row">${chips}</div>
       ${zeroNote}
       ${t("rulesMini") ? `<p class="rules-mini">${t("rulesMini")}</p>` : ""}
       <button class="btn" data-act="deal">${t("deal")} · ${formatCash(clamped)}</button>
     </div></div>`;
   }
   if (state.phase !== "over") return "";
+  if (resultDismissed) return "";
   if (state.drawGame) {
     return `<div class="overlay"><div class="modal">
       <h2>${t("drawGame")}</h2>
       <p class="sub">${t("drawGameSub")}</p>
       <div class="modal-actions">
         <button class="btn" data-act="next">${t("nextRound")}</button>
+        <button class="btn ghost" data-act="close-result">${t("closeResult")}</button>
       </div>
     </div></div>`;
   }
@@ -475,6 +490,7 @@ function overlay(): string {
     <div class="balances"><span>${t("you")} ${formatCash(state.players[0]!.cash)}</span></div>
     <div class="modal-actions">
       <button class="btn" data-act="next">${t("nextRound")}</button>
+      <button class="btn ghost" data-act="close-result">${t("closeResult")}</button>
     </div>
   </div></div>`;
 }
@@ -617,7 +633,6 @@ export function render(): void {
         <div class="dock-top">
           ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
           <div class="dock-play">
-            <div class="melds-row">${meldHtml(state.players[0]!)}</div>
             <div class="hand-row">${humanHandHtml()}</div>
           </div>
         </div>
@@ -747,7 +762,7 @@ function applyAutoClaim(c: Claim): void {
   else sfx.claim();
   selected = null;
   scheduleSave();
-  if (c.type === "win") render();
+  if (c.type === "win") { resultDismissed = false; render(); }
   else void afterMove();
 }
 
@@ -851,6 +866,7 @@ function goNext(): void {
   clearAutoTimer();
   shopOpen = false;
   menuOpen = false;
+  resultDismissed = false;
   dealReveal = null;
   flyDraw = null;
   nextHand(state);
@@ -868,12 +884,13 @@ function goReset(): void {
   clearAutoTimer();
   shopOpen = false;
   menuOpen = false;
+  resultDismissed = false;
   dealReveal = null;
   flyDraw = null;
   state = resetTable();
   selected = null;
   busy = false;
-  betDraft = 10;
+  betDraft = 1;
   sfx.click();
   saveNow();
   render();
@@ -967,6 +984,19 @@ function onClick(ev: Event): void {
     goNext();
     return;
   }
+  if (act === "close-result") {
+    resultDismissed = true;
+    sfx.click();
+    render();
+    return;
+  }
+  if (act === "a-face") {
+    const f = el.dataset.face === "camera" ? "camera" : "away";
+    setAFace(f as AFace);
+    sfx.click();
+    render();
+    return;
+  }
   if (act === "bet-set") {
     betDraft = Number(el.dataset.n);
     sfx.click();
@@ -985,10 +1015,10 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace")
+  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result")
     return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace") return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
 
   if (act === "select") {
     clearAutoTimer();
@@ -1114,6 +1144,7 @@ export function start(el: HTMLElement): void {
   loadTips();
   loadAutoTips();
   loadAutoPace();
+  loadAFace();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);

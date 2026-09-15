@@ -22,7 +22,7 @@ const NAMES: { en: string; zh: string }[] = [
   { en: "C", zh: "C" },
 ];
 
-const START_CASH = 100;
+const START_CASH = 1;
 
 function seatKind(w: Wind): string {
   return { E: "we", S: "ws", W: "ww", N: "wn" }[w];
