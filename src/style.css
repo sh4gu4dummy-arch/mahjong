@@ -928,3 +928,80 @@ button { font-family: inherit; }
 @media (max-width: 720px) {
   .lang-btn { padding: 4px 6px; font-size: 10px; }
 }
+
+
+/* ===== AI tips ===== */
+.tips-toggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 4px;
+}
+.tips-label {
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  background: rgba(0,0,0,.18);
+  border-right: 1px solid var(--gold-dim);
+}
+.tips-btn {
+  background: transparent;
+  color: var(--gold);
+  border: none;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tips-btn.on {
+  background: linear-gradient(180deg, #7ec8ff, #3a7ab8);
+  color: #0a1620;
+}
+.tips-btn:not(.on):hover { background: rgba(126,200,255,.15); }
+
+.tile.hand-tile.tip {
+  position: relative;
+  box-shadow:
+    0 0 0 2px #7ec8ff,
+    0 0 12px 3px rgba(126, 200, 255, 0.55),
+    0 1px 0 #fff8e8 inset,
+    2px 4px 8px rgba(0,0,0,.35);
+  transform: translateY(-8px);
+  z-index: 2;
+}
+.tile.hand-tile.tip.selected {
+  transform: translateY(-14px);
+  box-shadow:
+    0 0 0 2px #ffe08a,
+    0 0 14px 4px rgba(126, 200, 255, 0.65),
+    0 1px 0 #fff8e8 inset,
+    1px 1px 0 var(--tile-edge),
+    2px 10px 0 #8a7a58,
+    2px 14px 18px rgba(0,0,0,.45);
+}
+.tip-badge {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #9ad4ff, #3a7ab8);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  pointer-events: none;
+  animation: tip-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tip-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: 0.85; }
+}

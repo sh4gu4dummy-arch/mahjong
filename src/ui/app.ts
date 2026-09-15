@@ -1,4 +1,4 @@
-import type { Claim, GameState, Player, Tile } from "../game/types";
+import type { Claim, GameState, Player, Tile, Wind } from "../game/types";
 import { sortTiles, WIND_ZH, WIND_EN } from "../game/tiles";
 import {
   applyDiscard,
@@ -19,7 +19,8 @@ import {
 import { dongbeiFlags, selfTestWin } from "../game/win";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
-import { getLang, loadLang, setLang, t, type Lang } from "./i18n";
+import { getLang, loadLang, setLang, getTips, loadTips, setTips, t, type Lang } from "./i18n";
+import { chooseTipDiscard } from "../game/ai";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -72,6 +73,18 @@ const SEAT_AVATAR = [
 /** Counter-clockwise from East: E(0) → N(3) → W(2) → S(1) */
 const DEAL_ORDER = [0, 3, 2, 1] as const;
 
+const WIND_KIND: Record<Wind, string> = { E: "we", S: "ws", W: "ww", N: "wn" };
+
+function tipDiscardId(): number | null {
+  if (!getTips()) return null;
+  if (dealReveal || busy) return null;
+  if (state.phase !== "discard" || state.current !== 0) return null;
+  const p = state.players[0]!;
+  if (!p.hand.length) return null;
+  const tip = chooseTipDiscard(p, WIND_KIND[p.seat], WIND_KIND[state.roundWind]);
+  return tip.id;
+}
+
 function tileEl(
   tile: Tile,
   opts: {
@@ -82,6 +95,7 @@ function tileEl(
     drawn?: boolean;
     arriving?: boolean;
     toss?: boolean;
+    tip?: boolean;
   } = {},
 ): string {
   const css = tileCssClass(tile);
@@ -98,12 +112,14 @@ function tileEl(
     opts.back ? "back" : "",
     opts.arriving ? "arriving" : "",
     opts.toss ? "toss" : "",
+    opts.tip ? "tip" : "",
   ]
     .filter(Boolean)
     .join(" ");
   const face = opts.back ? "" : tileFaceSvg(tile);
   if (opts.size === "hand") {
-    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}">${face}</button>`;
+    const badge = opts.tip ? `<span class="tip-badge" aria-hidden="true">💡</span>` : "";
+    return `<button type="button" class="${cls}" data-act="select" data-id="${tile.id}" ${opts.tip ? 'aria-label="AI tip"' : ""}>${face}${badge}</button>`;
   }
   return `<span class="${cls}" data-id="${tile.id}">${face}</span>`;
 }
@@ -431,6 +447,7 @@ function humanHandHtml(): string {
   const n = visibleHandCount(0);
   const shown = hand.slice(0, n);
   const arrivingId = flyDraw && flyDraw.seat === 0 && flyDraw.tile ? flyDraw.tile.id : -1;
+  const tipId = tipDiscardId();
   return shown
     .map((tile) =>
       tileEl(tile, {
@@ -438,6 +455,7 @@ function humanHandHtml(): string {
         selected: tile.id === selected,
         drawn: tile.id === state.lastDraw?.id && !dealReveal,
         arriving: tile.id === arrivingId,
+        tip: tipId !== null && tile.id === tipId,
       }),
     )
     .join("");
@@ -448,6 +466,15 @@ function langToggle(): string {
   return `<div class="lang-toggle" role="group" aria-label="Language">
     <button type="button" class="lang-btn ${cur === "en" ? "on" : ""}" data-act="lang" data-lang="en">EN</button>
     <button type="button" class="lang-btn ${cur === "zh" ? "on" : ""}" data-act="lang" data-lang="zh">中文</button>
+  </div>`;
+}
+
+function tipsToggle(): string {
+  const on = getTips();
+  return `<div class="tips-toggle" role="group" aria-label="AI tips">
+    <span class="tips-label">${t("tips")}</span>
+    <button type="button" class="tips-btn ${on ? "on" : ""}" data-act="tips" data-on="1">${t("tipsOn")}</button>
+    <button type="button" class="tips-btn ${!on ? "on" : ""}" data-act="tips" data-on="0">${t("tipsOff")}</button>
   </div>`;
 }
 
@@ -473,6 +500,7 @@ export function render(): void {
       </div>
       <div class="toolbar">
         ${langToggle()}
+        ${tipsToggle()}
         <button class="btn ghost" data-act="mute">${mute}</button>
         <button class="btn ghost" data-act="shop">${t("shop")}</button>
         <button class="btn ghost" data-act="next">${t("next")}</button>
@@ -682,6 +710,12 @@ function onClick(ev: Event): void {
     }
     return;
   }
+  if (act === "tips") {
+    setTips(el.dataset.on === "1");
+    sfx.click();
+    render();
+    return;
+  }
   if (act === "mute") {
     setMuted(!isMuted());
     sfx.click();
@@ -731,10 +765,10 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang")
+  if (busy && act !== "mute" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips")
     return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang") return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips") return;
 
   if (act === "select") {
     if (state.phase !== "discard" || state.current !== 0 || dealReveal) return;
@@ -837,6 +871,7 @@ export function start(el: HTMLElement): void {
   selfTestWin();
   loadMute();
   loadLang();
+  loadTips();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);

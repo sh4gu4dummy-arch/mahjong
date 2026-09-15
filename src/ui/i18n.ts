@@ -73,6 +73,9 @@ const dict = {
   noCashMoved: { zh: "无现金变动（破产或 $0 赌注）", en: "no cash moved (broke or $0 bet)" },
   seatYou: { zh: "你 · YOU", en: "You · YOU" },
   seatOpp: { zh: "对家 · HIM", en: "Opposite · HIM" },
+  tips: { zh: "提示", en: "Tips" },
+  tipsOn: { zh: "开", en: "ON" },
+  tipsOff: { zh: "关", en: "OFF" },
 } as const;
 
 export type I18nKey = keyof typeof dict;
@@ -111,4 +114,31 @@ export function tb(zhKey: I18nKey, enKey?: I18nKey): string {
   const a = t(zhKey);
   if (lang === "zh") return a;
   return t(enKey ?? zhKey);
+}
+
+const TIPS_KEY = "aa-mahjong-tips";
+let tipsOn = false;
+
+export function loadTips(): boolean {
+  try {
+    const v = localStorage.getItem(TIPS_KEY);
+    if (v === "1" || v === "true" || v === "on") tipsOn = true;
+    else if (v === "0" || v === "false" || v === "off") tipsOn = false;
+  } catch {
+    /* ignore */
+  }
+  return tipsOn;
+}
+
+export function getTips(): boolean {
+  return tipsOn;
+}
+
+export function setTips(next: boolean): void {
+  tipsOn = next;
+  try {
+    localStorage.setItem(TIPS_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
 }
