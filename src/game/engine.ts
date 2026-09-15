@@ -16,10 +16,10 @@ import { chooseDiscard, pickAiClaim, aiShouldConcealedKong } from "./ai";
 import { isWinningHand, toWinResult } from "./win";
 
 const NAMES: { en: string; zh: string }[] = [
-  { en: "You", zh: "你" },
-  { en: "South", zh: "南家" },
-  { en: "West", zh: "西家" },
-  { en: "North", zh: "北家" },
+  { en: "A", zh: "A" },
+  { en: "L", zh: "L" },
+  { en: "J", zh: "J" },
+  { en: "C", zh: "C" },
 ];
 
 const START_CASH = 100;
