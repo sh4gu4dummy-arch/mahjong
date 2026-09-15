@@ -160,7 +160,7 @@ function tileEl(
 }
 
 function backFaceHtml(): string {
-  return `<img class="face-img back-face" src="tiles/Back.svg" alt="" draggable="false" decoding="async" aria-hidden="true" />`;
+  return `<img class="face-img back-face" src="tiles/Back.svg?v=green1" alt="" draggable="false" decoding="async" aria-hidden="true" />`;
 }
 
 function backs(n: number, arriving = false): string {
@@ -234,7 +234,6 @@ function seatHtml(i: number): string {
   if (i === 0) {
     return `<div class="seat pos-${pos} ${act}">
       <div class="river">${riverHtml(p)}</div>
-      ${avatarHtml(i, active)}
     </div>`;
   }
   return `<div class="seat pos-${pos} ${act}">
@@ -577,8 +576,13 @@ export function render(): void {
         </div>
       </div>
       <div class="dock">
-        <div class="melds-row">${meldHtml(state.players[0]!)}</div>
-        <div class="hand-row">${humanHandHtml()}</div>
+        <div class="dock-top">
+          ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
+          <div class="dock-play">
+            <div class="melds-row">${meldHtml(state.players[0]!)}</div>
+            <div class="hand-row">${humanHandHtml()}</div>
+          </div>
+        </div>
         <div class="actions">${turnButtons()}${tipsToggle()}</div>
       </div>
     </div>
