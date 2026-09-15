@@ -509,7 +509,6 @@ export function render(): void {
   const mute = isMuted() ? t("unmute") : t("mute");
   const last = state.lastDiscard;
   const playing = state.phase !== "bet";
-  const wallN = playing ? visualWallCount() : "—";
 
   // Full-screen park shop — hide the entire mahjong board while open.
   if (shopOpen) {
@@ -537,7 +536,6 @@ export function render(): void {
       <div class="meta">
         <span>${t("hand")} <b>${state.handNumber}</b></span>
         <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
-        <span>${t("wall")} <b>${wallN}</b></span>
         <span>${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>
       </div>
       <div class="toolbar">
