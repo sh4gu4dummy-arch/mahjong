@@ -1765,81 +1765,88 @@ button { font-family: inherit; }
 }
 
 @media (max-width: 900px) {
+  /* Characters on top (faces visible); compact catalog as bottom sheet.
+     Topbar already has Close — hide the panel duplicate so it cannot sit on chests. */
   .shop-scene {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:
-      "panel"
-      "stage";
+      "stage"
+      "panel";
   }
   .shop-panel {
     grid-area: panel;
     border-left: none;
-    border-bottom: 2px solid var(--gold);
-    border-top: none;
-    max-height: none;
-    padding: 8px 10px 10px;
-    gap: 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    border-bottom: none;
+    border-top: 2px solid var(--gold);
+    max-height: min(42vh, 320px);
+    padding: 6px 10px max(8px, var(--safe-bottom));
+    gap: 4px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,.35);
+    overflow: hidden;
+    z-index: 3;
   }
   .shop-stage {
     grid-area: stage;
-    padding: 4px 8px 0;
+    padding: 8px 8px 0;
     align-items: flex-end;
     justify-content: center;
     gap: 2px;
     min-height: 0;
+    overflow: hidden;
+    z-index: 1;
   }
   .shop-char-full.you { margin-right: -6px; }
   .shop-char-full.opp { margin-left: -6px; }
   .shop-scene .shop-catalog {
-    gap: 6px;
+    gap: 4px;
     margin: 0;
+    overflow: auto;
+    min-height: 0;
+    flex: 1;
   }
-  .shop-scene .shop-item {
-    padding: 8px 10px;
-    gap: 8px;
-    grid-template-columns: 44px 1fr auto;
-  }
-  .shop-panel h2 { font-size: 16px; }
-  .shop-cash { font-size: 13px; }
+  .shop-panel h2 { font-size: 15px; }
+  .shop-cash { font-size: 12px; }
   .shop-char-full {
     gap: 0;
     max-width: min(200px, 46vw);
+    max-height: 100%;
+    height: 100%;
   }
-  .shop-char-full.you .shop-char-body { width: min(180px, 44vw); }
-  .shop-char-full.opp .shop-char-body { width: min(200px, 48vw); }
-  .shop-char-full.you .shop-full {
-    width: min(180px, 44vw);
-    height: min(42vh, 340px);
-    max-height: 340px;
+  .shop-char-full.you .shop-char-body,
+  .shop-char-full.opp .shop-char-body {
+    width: min(170px, 42vw);
+    max-height: 100%;
+    height: 100%;
+  }
+  .shop-char-full.you .shop-full,
+  .shop-char-full.opp .shop-full {
+    width: min(170px, 42vw);
+    height: 100%;
+    max-height: 100%;
     object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;
   }
-  .shop-char-full.opp .shop-full {
-    width: min(200px, 48vw);
-    height: min(48vh, 380px);
-    max-height: 380px;
-    object-fit: contain;
-    object-position: bottom center;
-  }
   .shop-char-label { display: none !important; }
   .shop-scene .shop-item {
-    padding: 6px 8px;
+    padding: 5px 8px;
     gap: 6px;
-    grid-template-columns: 40px 1fr auto;
+    grid-template-columns: 36px 1fr auto;
+  }
+  .shop-scene .shop-item-img {
+    width: 36px;
+    height: 36px;
   }
   .shop-buy {
     padding: 4px 10px !important;
     min-height: 28px !important;
     font-size: 11px !important;
   }
-  .shop-panel .modal-actions { margin-top: 2px; }
-  .shop-panel .modal-actions .btn {
-    min-height: 32px;
-    padding: 6px 12px;
-    font-size: 12px;
+  .shop-panel .modal-actions { display: none; }
+  .shop-scene .shop-flash {
+    min-height: 0;
+    font-size: 11px;
   }
 }
 
