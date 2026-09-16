@@ -1081,8 +1081,8 @@ button { font-family: inherit; }
 /* Phone + short phone: keep everything inside the viewport */
 @media (max-width: 719px) {
   :root {
-    --dock-avatar: 48px;
-    --mini-w: clamp(23px, 6vw, 29px);
+    --dock-avatar: 46px;
+    --mini-w: clamp(22px, 5.8vw, 28px);
     --mini-h: calc(var(--mini-w) * 1.375);
     --human-tile-w: clamp(54px, 13.8vw, 60px);
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
@@ -1097,10 +1097,20 @@ button { font-family: inherit; }
   }
   .btn.shop-btn { padding: 4px 10px; font-size: 12px; min-height: 30px; }
   .menu-btn { min-width: 34px; min-height: 34px; font-size: 18px; }
-  .table {
-    grid-template-columns: minmax(52px, 16%) minmax(0, 1fr) minmax(52px, 16%);
-    grid-template-rows: minmax(36px, auto) minmax(0, 1fr) minmax(36px, auto);
+  /* Air between felt table and hand/controls */
+  .stage {
+    gap: 8px;
+    padding-top: 6px;
   }
+  .table-frame { padding: 6px; }
+  .table {
+    /* Slimmer side chrome frees center; keep human hand ratio untouched */
+    grid-template-columns: minmax(46px, 13.5%) minmax(0, 1fr) minmax(46px, 13.5%);
+    grid-template-rows: minmax(40px, auto) minmax(0, 1fr) minmax(40px, auto);
+    gap: 2px 4px;
+  }
+  .seat { gap: 4px; padding: 4px 2px; }
+  .pos-bottom { gap: 8px; padding-bottom: 4px; }
   .pos-left, .pos-right {
     overflow: visible;
   }
@@ -1108,27 +1118,29 @@ button { font-family: inherit; }
     flex-shrink: 0;
   }
 
+  /* Wall: keep 4 sides but don't dominate; leave air around last-discard */
   .tile-wall {
-    width: min(168px, 52vw, 100%);
-    height: min(168px, 52vw, 100%);
-    gap: 2px;
+    width: min(148px, 46vw, 100%);
+    height: min(148px, 46vw, 100%);
+    gap: 3px;
   }
   .center { overflow: visible; }
   :root {
-    --wall-tile-w: max(7px, calc(var(--tile-w) * 0.22));
+    --wall-tile-w: max(6px, calc(var(--tile-w) * 0.2));
     --wall-tile-h: calc(var(--wall-tile-w) * 1.35);
   }
   .wall-side { gap: 1px; }
-  /* Side/top avatars slightly larger than prior 36px phone size */
+  .wall-hub { gap: 4px; }
+  /* Slightly smaller opponent chrome frees center without crushing hand */
   .pos-left .avatar-ring,
   .pos-right .avatar-ring,
-  .pos-top .avatar-ring { width: 42px; height: 42px; }
+  .pos-top .avatar-ring { width: 38px; height: 38px; }
   .avatar-name { font-size: 9px; padding: 1px 5px; }
   .pos-left .backs, .pos-right .backs,
   .pos-left .melds, .pos-right .melds,
   .pos-left .river, .pos-right .river {
     max-height: min(48vh, 400px);
-    gap: 1px;
+    gap: 2px;
     overflow: visible;
   }
   .pos-top .backs, .pos-top .river, .pos-top .melds {
@@ -1141,7 +1153,7 @@ button { font-family: inherit; }
     overflow: hidden;
     max-height: calc(var(--mini-h) * 2.1);
   }
-  .center { padding: 2px; gap: 4px; min-width: 0; overflow: visible; }
+  .center { padding: 6px 4px; gap: 6px; min-width: 0; overflow: visible; }
   .last-discard-slot { min-height: 44px; }
   .act { padding: 4px 7px; font-size: 10px; min-width: 30px; min-height: 30px; }
   .act .tile { --w: 22px; --h: 30px; }
@@ -1149,21 +1161,40 @@ button { font-family: inherit; }
   .chow-preview { gap: 2px; padding-left: 5px; padding-right: 5px; }
   .tips-toggle, .pace-toggle { max-width: none; flex-shrink: 0; }
   .act.tips-act, .act.auto-act { padding: 4px 6px; font-size: 9px; }
+  /* Dock: hand / controls / tips as distinct bands */
+  .dock {
+    padding-top: 6px;
+    padding-left: max(8px, var(--safe-left));
+    padding-right: max(8px, var(--safe-right));
+    padding-bottom: max(6px, var(--safe-bottom));
+  }
+  .hand-row {
+    padding: 4px 2px 6px;
+    margin-bottom: 2px;
+  }
   .dock-bar {
     flex-wrap: wrap;
     align-items: flex-start;
+    gap: 8px 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(107, 74, 34, 0.55);
   }
   .dock-bar .actions {
     flex: 1 1 100%;
     width: 100%;
     max-width: 100%;
     flex-wrap: wrap;
-    row-gap: 4px;
+    gap: 6px;
+    row-gap: 6px;
     overflow-x: visible;
   }
   .dock-bar .dock-tips {
     flex: 1 1 100%;
     order: 5;
+    margin-top: 2px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(107, 74, 34, 0.4);
+    gap: 6px;
   }
   .act.tips-act, .act.auto-act, .act.pace-act {
     flex-shrink: 0;
@@ -1177,18 +1208,25 @@ button { font-family: inherit; }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --dock-avatar: 44px;
+    --dock-avatar: 42px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
     --human-tile-w: clamp(52px, 13vw, 58px);
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
-    --mini-w: clamp(21px, 5.6vw, 27px);
+    --mini-w: clamp(20px, 5.4vw, 26px);
     --mini-h: calc(var(--mini-w) * 1.375);
   }
+  .stage { gap: 6px; padding-top: 4px; }
   .tile-wall {
-    width: min(140px, 46vw, 100%);
-    height: min(140px, 46vw, 100%);
+    width: min(128px, 42vw, 100%);
+    height: min(128px, 42vw, 100%);
   }
+  .dock {
+    padding-top: 4px;
+    padding-bottom: max(4px, var(--safe-bottom));
+  }
+  .dock-bar { gap: 6px; padding-top: 4px; }
+  .dock-bar .dock-tips { padding-top: 4px; }
 }
 
 /* ===== Desktop / wide: scale up gracefully ===== */
