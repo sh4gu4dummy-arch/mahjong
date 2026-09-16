@@ -725,6 +725,12 @@ button { font-family: inherit; }
   --h: var(--tile-h);
   width: var(--w);
   height: var(--h);
+  min-width: var(--w);
+  max-width: var(--w);
+  min-height: var(--h);
+  max-height: var(--h);
+  flex: 0 0 var(--w);
+  box-sizing: border-box;
   border: none;
   padding: 0;
   border-radius: 5px;
@@ -769,6 +775,8 @@ button { font-family: inherit; }
   height: 100%;
   max-width: 100%;
   max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: block;
   pointer-events: none;
   object-fit: contain;
@@ -908,10 +916,9 @@ button { font-family: inherit; }
   background: linear-gradient(180deg, #2a160a, #140c08);
   border-top: 1px solid #6b4a22;
   box-shadow: 0 -4px 14px rgba(0,0,0,.35);
-  overflow-x: auto;
+  overflow-x: visible;
   overflow-y: visible;
   max-width: 100%;
-  -webkit-overflow-scrolling: touch;
 }
 .melds-row {
   display: flex;
@@ -926,7 +933,7 @@ button { font-family: inherit; }
   align-items: flex-end;
   gap: 2px;
   flex-wrap: nowrap;
-  min-height: var(--human-tile-h);
+  min-height: calc(var(--human-tile-h) + 8px);
   padding: 2px 4px 1px;
   width: 100%;
   max-width: 100%;
@@ -934,6 +941,7 @@ button { font-family: inherit; }
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  touch-action: pan-x;
 }
 .hand-row::-webkit-scrollbar { display: none; }
 .actions {
@@ -1139,10 +1147,10 @@ button { font-family: inherit; }
 /* Phone + short phone: keep everything inside the viewport */
 @media (max-width: 719px) {
   :root {
-    --dock-avatar: 88px;
+    --dock-avatar: 76px;
     --mini-w: clamp(22px, 5.8vw, 28px);
     --mini-h: calc(var(--mini-w) * 1.375);
-    --human-tile-w: clamp(54px, 13.8vw, 60px);
+    --human-tile-w: clamp(40px, 10.2vw, 46px);
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
   }
   .brand h1 { font-size: 12px; max-width: 28vw; }
@@ -1322,10 +1330,10 @@ button { font-family: inherit; }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --dock-avatar: 76px;
+    --dock-avatar: 68px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
-    --human-tile-w: clamp(52px, 13vw, 58px);
+    --human-tile-w: clamp(38px, 9.6vw, 44px);
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
     --mini-w: clamp(20px, 5.4vw, 26px);
     --mini-h: calc(var(--mini-w) * 1.375);
@@ -2093,6 +2101,7 @@ button { font-family: inherit; }
   margin: 0 auto;
   padding: 2px 0 0;
   min-width: 0;
+  overflow-x: clip;
 }
 .dock-bar .avatar-wrap {
   flex-direction: row;
@@ -2141,11 +2150,6 @@ button { font-family: inherit; }
   gap: 4px;
   max-width: 100%;
 }
-.dock {
-  overflow-x: hidden; /* no edge scrollbar; wrap instead */
-}
-
-
 .pace-toggle {
   display: inline-flex;
   margin-left: 4px;
