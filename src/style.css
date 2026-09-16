@@ -1601,12 +1601,18 @@ button { font-family: inherit; }
 }
 /* Petite girl vs taller opposite male — bottoms aligned */
 .shop-char-full.you .shop-full {
+  width: min(220px, 28vw);
   height: 58vh;
   max-height: 580px;
+  object-fit: contain;
+  object-position: bottom center;
 }
 .shop-char-full.opp .shop-full {
+  width: min(280px, 36vw);
   height: 70vh;
   max-height: 700px;
+  object-fit: contain;
+  object-position: bottom center;
 }
 .shop-char-full.you .shop-char-body {
   width: min(220px, 28vw);
@@ -1764,14 +1770,18 @@ button { font-family: inherit; }
   .shop-char-full.you .shop-char-body { width: min(180px, 44vw); }
   .shop-char-full.opp .shop-char-body { width: min(200px, 48vw); }
   .shop-char-full.you .shop-full {
+    width: min(180px, 44vw);
     height: min(42vh, 340px);
     max-height: 340px;
+    object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;
   }
   .shop-char-full.opp .shop-full {
+    width: min(200px, 48vw);
     height: min(48vh, 380px);
     max-height: 380px;
+    object-fit: contain;
     object-position: bottom center;
   }
   .shop-char-label { display: none !important; }

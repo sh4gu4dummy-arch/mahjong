@@ -284,10 +284,10 @@ function seatRelLabel(i: number): string {
 }
 
 function playerAvatarSrc(): string {
-  return getAFace() === "camera" ? "avatars/player-face.png?v=face4" : "avatars/player.png?v=a1";
+  return getAFace() === "camera" ? "avatars/player-face.png?v=face5" : "avatars/player.png?v=a1";
 }
 
-const HOLD_POSE_V = "hold2";
+const HOLD_POSE_V = "hold3";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
   const face = getAFace() === "camera";
@@ -299,14 +299,14 @@ function playerFullSrc(prop?: ShopPropId | null): string {
   // Beer/coffee still only have back-facing holds; face toggle returns after put-down.
   if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
   if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
-  return face ? "chars/player-face.png?v=face3" : "chars/player-full.png?v=cut2";
+  return face ? "chars/player-face.png?v=face5" : "chars/player-full.png?v=cut3";
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {
   if (prop === "beer") return `chars/opposite-hold-beer.png?v=${HOLD_POSE_V}`;
   if (prop === "coffee") return `chars/opposite-hold-coffee.png?v=${HOLD_POSE_V}`;
   if (prop === "cigarette") return `chars/opposite-hold-cigarette.png?v=${HOLD_POSE_V}`;
-  return "chars/opposite-full.png?v=cut2";
+  return "chars/opposite-full.png?v=cut3";
 }
 
 function faceFlipBtn(where: "dock" | "shop"): string {
