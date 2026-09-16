@@ -410,11 +410,27 @@ button { font-family: inherit; }
 .pos-top .avatar-wrap {
   position: absolute;
   top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6;
+  z-index: 8;
   margin: 0;
   pointer-events: auto;
+  max-width: calc(100% - 2px);
+}
+.pos-top .avatar-wrap {
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* Keep L fully inside the left column (no centered overflow into clipped felt) */
+.pos-left .avatar-wrap {
+  left: 0;
+  right: auto;
+  transform: none;
+  align-items: center;
+}
+.pos-right .avatar-wrap {
+  right: 0;
+  left: auto;
+  transform: none;
+  align-items: center;
 }
 .pos-left .backs,
 .pos-right .backs,
@@ -1172,18 +1188,37 @@ button { font-family: inherit; }
   .table-frame { padding: 6px; }
   .table {
     /* Slimmer side chrome frees center; keep human hand ratio untouched */
-    grid-template-columns: minmax(46px, 13.5%) minmax(0, 1fr) minmax(46px, 13.5%);
+    grid-template-columns: minmax(58px, 16%) minmax(0, 1fr) minmax(58px, 16%);
     grid-template-rows: minmax(40px, auto) minmax(0, 1fr) minmax(40px, auto);
     gap: 2px 4px;
   }
   .seat { gap: 4px; padding: 4px 2px; }
   .pos-bottom { gap: 8px; padding-bottom: 4px; }
+  .table-frame,
+  .table {
+    overflow: visible; /* allow L/C/J avatars+cash to stay on-screen */
+  }
   .pos-left, .pos-right {
     overflow: visible;
-    padding-top: 50px;
+    padding-top: 52px;
+    min-width: 58px;
+    z-index: 8;
   }
   .pos-top {
     padding-top: 48px;
+    z-index: 7;
+  }
+  .pos-left .avatar-meta,
+  .pos-right .avatar-meta,
+  .pos-top .avatar-meta {
+    max-width: 100%;
+  }
+  .pos-left .cash,
+  .pos-right .cash,
+  .pos-top .cash {
+    font-size: 9px;
+    padding: 0 5px;
+    max-width: 100%;
   }
   .pos-left .avatar-wrap, .pos-right .avatar-wrap, .pos-top .avatar-wrap {
     flex-shrink: 0;
