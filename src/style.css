@@ -998,17 +998,33 @@ button { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
-  padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+  z-index: 50;
+  padding: max(10px, var(--safe-top)) max(10px, var(--safe-right)) max(10px, var(--safe-bottom)) max(10px, var(--safe-left));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal {
   width: min(460px, 100%);
+  max-height: min(88dvh, 88vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: linear-gradient(180deg, #3e2612, #241408);
   border: 2px solid var(--gold);
   border-radius: 14px;
   padding: 22px 22px 18px;
   box-shadow: 0 20px 60px rgba(0,0,0,.6);
   text-align: center;
+  -webkit-overflow-scrolling: touch;
+}
+.modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 10px;
+  padding-top: 10px;
+  padding-bottom: 2px;
+  background: linear-gradient(180deg, rgba(36,20,8,0), #241408 28%);
 }
 .modal h2 {
   font-family: "Noto Serif SC", serif;
@@ -1268,6 +1284,35 @@ button { font-family: inherit; }
   .act.tips-act, .act.auto-act, .act.pace-act {
     flex-shrink: 0;
   }
+
+  /* Post-game / bet modal: fit phone; keep Next/Close on screen */
+  .overlay {
+    align-items: flex-start;
+    padding-top: max(8px, var(--safe-top));
+  }
+  .modal {
+    width: min(420px, 100%);
+    max-height: min(92dvh, 92vh);
+    padding: 12px 12px 10px;
+    border-radius: 12px;
+    margin: auto 0;
+  }
+  .modal h2 { font-size: 20px; margin-bottom: 4px; }
+  .modal .sub { font-size: 12px; margin-bottom: 8px; }
+  .modal .win-tiles {
+    margin: 6px 0 8px;
+    max-height: 22vh;
+    overflow: auto;
+  }
+  .modal .fan-list { margin-bottom: 8px; }
+  .modal .fan-list li { padding: 4px 2px; font-size: 12px; }
+  .modal .balances { margin: 4px 0 8px; gap: 6px; font-size: 11px; }
+  .modal .modal-actions .btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .avatar.hero { width: 52px; height: 52px; }
 
   .pos-left .backs, .pos-right .backs {
     max-height: min(36vh, 260px);
