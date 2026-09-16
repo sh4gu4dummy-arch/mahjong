@@ -1159,7 +1159,16 @@ button { font-family: inherit; }
     max-width: 100%;
     flex-wrap: wrap;
     row-gap: 4px;
+    overflow-x: visible;
   }
+  .dock-bar .dock-tips {
+    flex: 1 1 100%;
+    order: 5;
+  }
+  .act.tips-act, .act.auto-act, .act.pace-act {
+    flex-shrink: 0;
+  }
+
   .pos-left .backs, .pos-right .backs {
     max-height: min(36vh, 260px);
     overflow: hidden;
@@ -1918,12 +1927,23 @@ button { font-family: inherit; }
   order: 0;
 }
 .dock-bar .actions {
-  flex: 1 1 180px;
+  flex: 1 1 140px;
   justify-content: flex-start;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   margin-top: 0;
   width: auto;
   max-width: 100%;
+  overflow-x: visible;
+}
+.dock-bar .dock-tips {
+  flex: 1 1 100%;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+}
+.dock {
+  overflow-x: hidden; /* no edge scrollbar; wrap instead */
 }
 
 

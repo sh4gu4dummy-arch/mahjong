@@ -458,7 +458,11 @@ function turnButtons(): string {
       );
     }
   }
-  if (!dealReveal && state.phase === "claim") btns.push(claimButtons());
+  if (!dealReveal && state.phase === "claim") {
+    btns.push(claimButtons());
+    // Claims alone — no disabled Discard/Sort crowding Tips/Auto off-screen.
+    return btns.join("");
+  }
   const canDiscard = myDiscard && selected !== null;
   const canSort = myDiscard;
   btns.push(
@@ -777,7 +781,8 @@ export function render(): void {
         <div class="dock-bar">
           ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
           ${cashPill({ float: true })}
-          <div class="actions">${turnButtons()}${tipsToggle()}</div>
+          <div class="actions">${turnButtons()}</div>
+          ${tipsToggle()}
         </div>
       </div>
     </div>
