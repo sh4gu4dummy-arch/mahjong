@@ -1603,7 +1603,7 @@ button { font-family: inherit; }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: clamp(24px, 6vw, 80px);
+  gap: clamp(2px, 1vw, 12px);
   padding: 24px 24px 4vh;
   min-width: 0;
 }
@@ -1787,9 +1787,11 @@ button { font-family: inherit; }
     padding: 4px 8px 0;
     align-items: flex-end;
     justify-content: center;
-    gap: clamp(12px, 4vw, 28px);
+    gap: 2px;
     min-height: 0;
   }
+  .shop-char-full.you { margin-right: -6px; }
+  .shop-char-full.opp { margin-left: -6px; }
   .shop-scene .shop-catalog {
     gap: 6px;
     margin: 0;
