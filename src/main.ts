@@ -15,7 +15,7 @@ function registerAssetCache(): void {
 }
 
 function warmImages(): void {
-  const hold = "hold5";
+  const hold = "hold6";
   const urls = [
     "avatars/player.png?v=a1",
     "avatars/player-face.png?v=face7",

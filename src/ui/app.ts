@@ -287,7 +287,7 @@ function playerAvatarSrc(): string {
   return getAFace() === "camera" ? "avatars/player-face.png?v=face7" : "avatars/player.png?v=a1";
 }
 
-const HOLD_POSE_V = "hold5";
+const HOLD_POSE_V = "hold6";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
   const face = getAFace() === "camera";
