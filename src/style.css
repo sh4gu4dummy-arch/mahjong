@@ -12,15 +12,17 @@
   --tile-face: #fffaf0;
   --tile-edge: #cfc3a4;
   --shadow: rgba(0, 0, 0, 0.45);
-  /* Mobile-first: same face art as desktop; size fits a 14-tile hand + dock. */
-  --dock-avatar: 72px;
-  /* Phone-first readable tiles (same PNG faces as desktop). Hand may scroll if needed. */
-  --tile-w: clamp(44px, 11.5vw, 52px);
+  /* Dock-bar avatar (controls row); keep compact to free table height. */
+  --dock-avatar: 48px;
+  /* Opponent/table tile base (last discard etc.); side seats use --mini-*. */
+  --tile-w: clamp(36px, 9.5vw, 44px);
   --tile-h: calc(var(--tile-w) * 1.375);
-  --human-tile-w: var(--tile-w);
-  --human-tile-h: var(--tile-h);
-  --mini-w: var(--tile-w);
-  --mini-h: var(--tile-h);
+  /* A's hand: larger than opponents for readability. */
+  --human-tile-w: clamp(50px, 12.8vw, 58px);
+  --human-tile-h: calc(var(--human-tile-w) * 1.375);
+  /* L/J/C backs, rivers, melds — small enough to avoid side clipping. */
+  --mini-w: clamp(24px, 6.2vw, 30px);
+  --mini-h: calc(var(--mini-w) * 1.375);
   --wall-tile-w: max(8px, calc(var(--tile-w) * 0.26));
   --wall-tile-h: calc(var(--wall-tile-w) * 1.4);
   --touch: 44px;
@@ -64,39 +66,40 @@ body {
 
 button { font-family: inherit; }
 
-/* ===== Header (mobile-first compact) ===== */
+/* ===== Header (thin mobile-first) ===== */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: max(6px, var(--safe-top)) max(10px, var(--safe-right)) 6px max(10px, var(--safe-left));
+  gap: 6px;
+  padding: max(2px, var(--safe-top)) max(8px, var(--safe-right)) 2px max(8px, var(--safe-left));
   background: linear-gradient(180deg, #6b3e1c 0%, #3d220e 100%);
-  border-bottom: 2px solid var(--gold);
-  box-shadow: 0 4px 16px var(--shadow);
+  border-bottom: 1px solid var(--gold);
+  box-shadow: 0 2px 8px var(--shadow);
   z-index: 30;
   flex-shrink: 0;
   position: relative;
-  min-height: calc(var(--touch) + 8px);
+  min-height: 36px;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 0;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   flex-shrink: 0;
   min-width: 0;
 }
 .brand h1 {
   margin: 0;
   font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--gold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 42vw;
+  max-width: 38vw;
+  line-height: 1.1;
 }
 /* Dual-brand subtitle removed — never show Northeast beside title */
 .brand .zh { display: none !important; }
@@ -114,14 +117,15 @@ button { font-family: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: #f3e2c0;
   background: rgba(0,0,0,.28);
   border: 1px solid rgba(212,175,103,.35);
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   white-space: nowrap;
-  min-height: var(--touch);
+  min-height: 32px;
+  flex-shrink: 0;
 }
 .cash-pill b { color: var(--gold); font-weight: 800; }
 .topbar-main {
@@ -148,10 +152,10 @@ button { font-family: inherit; }
 }
 .topbar-more { position: relative; flex-shrink: 0; }
 .menu-btn {
-  min-width: var(--touch);
-  min-height: var(--touch);
+  min-width: 34px;
+  min-height: 34px;
   padding: 0;
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
   letter-spacing: 0;
   display: inline-flex;
@@ -197,16 +201,16 @@ button { font-family: inherit; }
   font-size: 13px;
 }
 .btn.shop-btn {
-  padding: 0 14px;
-  min-height: var(--touch);
-  font-size: 13px;
+  padding: 0 10px;
+  min-height: 30px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   background: linear-gradient(180deg, #efd48a, #c9a24a 55%, #8a6a28);
   color: #1a1208;
-  border: 2px solid #fff1c2;
-  border-radius: 8px;
-  box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.35) inset;
+  border: 1px solid #fff1c2;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.35) inset;
   text-transform: uppercase;
   flex-shrink: 0;
 }
@@ -268,8 +272,8 @@ button { font-family: inherit; }
   min-height: 0;
   min-width: 0;
   display: grid;
-  /* Side columns must fit avatar + vertical tile stack */
-  grid-template-columns: minmax(72px, 22%) minmax(0, 1fr) minmax(72px, 22%);
+  /* Side columns: compact mini tiles + slightly larger avatars */
+  grid-template-columns: minmax(56px, 18%) minmax(0, 1fr) minmax(56px, 18%);
   grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-areas:
     "tl top tr"
@@ -318,13 +322,20 @@ button { font-family: inherit; }
 .pos-left .avatar-wrap { flex-direction: column; align-items: center; }
 .pos-right .avatar-wrap { flex-direction: column; align-items: center; }
 .avatar-ring {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  padding: 4px;
+  padding: 3px;
   background: linear-gradient(145deg, #f0d78a, #8a6a28 55%, #5a3a14);
   box-shadow: 0 4px 10px rgba(0,0,0,.45);
   flex-shrink: 0;
+}
+/* Opponent seats use slightly larger rings than the compact dock avatar */
+.pos-left .avatar-ring,
+.pos-right .avatar-ring,
+.pos-top .avatar-ring {
+  width: 44px;
+  height: 44px;
 }
 .avatar {
   width: 100%;
@@ -399,6 +410,14 @@ button { font-family: inherit; }
   text-transform: uppercase;
   font-weight: 700;
 }
+/* Opponent seat tiles (backs / river / melds) — compact to stop side clipping */
+.pos-left .tile,
+.pos-right .tile,
+.pos-top .tile {
+  --w: var(--mini-w);
+  --h: var(--mini-h);
+}
+
 .backs, .melds, .river {
   display: flex;
   flex-wrap: wrap;
@@ -730,10 +749,10 @@ button { font-family: inherit; }
   position: sticky;
   bottom: 0;
   z-index: 15;
-  padding: 4px max(8px, var(--safe-right)) max(6px, var(--safe-bottom)) max(8px, var(--safe-left));
+  padding: 2px max(6px, var(--safe-right)) max(4px, var(--safe-bottom)) max(6px, var(--safe-left));
   background: linear-gradient(180deg, #2a160a, #140c08);
   border-top: 1px solid #6b4a22;
-  box-shadow: 0 -6px 18px rgba(0,0,0,.35);
+  box-shadow: 0 -4px 14px rgba(0,0,0,.35);
   overflow: hidden;
   max-width: 100%;
 }
@@ -748,10 +767,10 @@ button { font-family: inherit; }
   display: flex;
   justify-content: safe center;
   align-items: flex-end;
-  gap: 3px;
+  gap: 2px;
   flex-wrap: nowrap;
-  min-height: var(--tile-h);
-  padding: 4px 6px 2px;
+  min-height: var(--human-tile-h);
+  padding: 2px 4px 1px;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
@@ -762,31 +781,34 @@ button { font-family: inherit; }
 .hand-row::-webkit-scrollbar { display: none; }
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  width: 100%;
+  gap: 4px;
+  margin-top: 0;
+  width: auto;
   max-width: 100%;
+  min-width: 0;
   min-height: 0;
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
 }
 .act {
   border: none;
-  border-radius: 8px;
-  padding: 10px 14px;
-  min-height: var(--touch);
-  min-width: var(--touch);
+  border-radius: 7px;
+  padding: 6px 9px;
+  min-height: 34px;
+  min-width: 34px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  box-shadow: 0 3px 0 rgba(0,0,0,.35);
+  box-shadow: 0 2px 0 rgba(0,0,0,.35);
   touch-action: manipulation;
+  flex-shrink: 0;
 }
 .act:active { transform: translateY(2px); box-shadow: none; }
 .act.discard { background: #e7c36a; color: #1a1208; }
@@ -938,14 +960,24 @@ button { font-family: inherit; }
 /* Phone + short phone: keep everything inside the viewport */
 @media (max-width: 719px) {
   :root {
-    --dock-avatar: 84px;
+    --dock-avatar: 48px;
+    --mini-w: clamp(22px, 5.8vw, 28px);
+    --mini-h: calc(var(--mini-w) * 1.375);
+    --human-tile-w: clamp(50px, 12.6vw, 56px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.375);
   }
-  .brand h1 { font-size: 15px; max-width: 28vw; }
-  .topbar { gap: 6px; padding-left: max(8px, var(--safe-left)); padding-right: max(8px, var(--safe-right)); }
-  .btn.shop-btn { padding: 8px 12px; font-size: 13px; min-height: 40px; }
+  .brand h1 { font-size: 12px; max-width: 32vw; }
+  .topbar {
+    gap: 4px;
+    padding-left: max(6px, var(--safe-left));
+    padding-right: max(6px, var(--safe-right));
+    min-height: 34px;
+  }
+  .btn.shop-btn { padding: 4px 10px; font-size: 12px; min-height: 30px; }
+  .menu-btn { min-width: 34px; min-height: 34px; font-size: 18px; }
   .table {
-    grid-template-columns: minmax(64px, 20%) minmax(0, 1fr) minmax(64px, 20%);
-    grid-template-rows: minmax(40px, auto) minmax(0, 1fr) minmax(44px, auto);
+    grid-template-columns: minmax(52px, 16%) minmax(0, 1fr) minmax(52px, 16%);
+    grid-template-rows: minmax(36px, auto) minmax(0, 1fr) minmax(36px, auto);
   }
   .pos-left, .pos-right {
     overflow: visible;
@@ -960,12 +992,15 @@ button { font-family: inherit; }
     gap: 2px;
   }
   .wall-side { gap: 1px; }
-  .avatar-ring { width: 36px; height: 36px; }
+  /* Side/top avatars slightly larger than prior 36px phone size */
+  .pos-left .avatar-ring,
+  .pos-right .avatar-ring,
+  .pos-top .avatar-ring { width: 42px; height: 42px; }
   .avatar-name { font-size: 9px; padding: 1px 5px; }
   .pos-left .backs, .pos-right .backs,
   .pos-left .melds, .pos-right .melds,
   .pos-left .river, .pos-right .river {
-    max-height: min(42vh, 360px);
+    max-height: min(48vh, 400px);
     gap: 1px;
     overflow: visible;
   }
@@ -977,21 +1012,25 @@ button { font-family: inherit; }
   .pos-bottom .river {
     max-width: 100%;
     overflow: hidden;
-    max-height: calc(var(--tile-h) * 2.1);
+    max-height: calc(var(--mini-h) * 2.1);
   }
   .center { padding: 2px; gap: 4px; min-width: 0; overflow: hidden; }
-  .last-discard-slot { min-height: 48px; }
-  .dock-top .face-toggle { transform: scale(0.85); transform-origin: center top; }
-  .face-btn { padding: 2px 6px; min-height: 22px; font-size: 9px; }
-  .act { padding: 8px 10px; font-size: 12px; min-width: 44px; }
-  .tips-toggle, .pace-toggle { max-width: 100%; }
+  .last-discard-slot { min-height: 44px; }
+  .dock-bar .face-toggle { transform: scale(0.9); transform-origin: left center; }
+  .face-btn { padding: 2px 5px; min-height: 20px; font-size: 8px; }
+  .act { padding: 5px 8px; font-size: 11px; min-width: 32px; min-height: 32px; }
+  .tips-toggle, .pace-toggle { max-width: none; flex-shrink: 0; }
 }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --dock-avatar: 64px;
-    --tile-w: clamp(42px, 11vw, 48px);
+    --dock-avatar: 44px;
+    --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
+    --human-tile-w: clamp(48px, 12vw, 54px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.375);
+    --mini-w: clamp(20px, 5.4vw, 26px);
+    --mini-h: calc(var(--mini-w) * 1.375);
   }
   .tile-wall {
     width: min(96px, 28vw, 100%);
@@ -1002,16 +1041,21 @@ button { font-family: inherit; }
 /* ===== Desktop / wide: scale up gracefully ===== */
 @media (min-width: 720px) {
   :root {
-    --dock-avatar: 96px;
-    --tile-w: 60px;
-    --tile-h: 82px;
+    --dock-avatar: 56px;
+    --tile-w: 52px;
+    --tile-h: 72px;
+    --human-tile-w: 64px;
+    --human-tile-h: 88px;
+    --mini-w: 36px;
+    --mini-h: 50px;
     --wall-tile-w: 18px;
     --wall-tile-h: 26px;
   }
-  .brand h1 { font-size: 20px; max-width: none; }
+  .brand h1 { font-size: 18px; max-width: none; }
   .topbar {
     gap: 12px;
-    padding: max(8px, var(--safe-top)) max(16px, var(--safe-right)) 8px max(16px, var(--safe-left));
+    padding: max(6px, var(--safe-top)) max(16px, var(--safe-right)) 6px max(16px, var(--safe-left));
+    min-height: 44px;
   }
   .topbar-main,
   .topbar-more { display: none; }
@@ -1019,30 +1063,38 @@ button { font-family: inherit; }
   .toolbar.desktop-toolbar {
     display: flex;
   }
-  .cash-pill { min-height: 36px; font-size: 13px; }
+  .cash-pill { min-height: 34px; font-size: 13px; }
   .btn { min-height: 36px; }
   .btn.shop-btn { min-height: 40px; padding: 8px 18px; font-size: 14px; }
-  .avatar-ring { width: 80px; height: 80px; }
+  .pos-left .avatar-ring,
+  .pos-right .avatar-ring,
+  .pos-top .avatar-ring { width: 64px; height: 64px; }
   .avatar-name { font-size: 12px; }
   .tile-wall { width: min(320px, 42vw); height: min(320px, 42vw); }
   .table {
-    grid-template-columns: minmax(88px, 18%) 1fr minmax(88px, 18%);
+    grid-template-columns: minmax(72px, 16%) 1fr minmax(72px, 16%);
   }
   .table-frame { padding: 10px; border-radius: 18px; }
   .stage { padding: 8px 10px 0; }
-  .act { font-size: 14px; padding: 8px 16px; }
+  .act { font-size: 13px; padding: 7px 12px; min-height: 36px; }
 }
 
 @media (min-width: 1024px) {
   :root {
-    --dock-avatar: 108px;
-    --tile-w: 68px;
-    --tile-h: 92px;
+    --dock-avatar: 64px;
+    --tile-w: 56px;
+    --tile-h: 76px;
+    --human-tile-w: 70px;
+    --human-tile-h: 96px;
+    --mini-w: 40px;
+    --mini-h: 55px;
     --wall-tile-w: 20px;
     --wall-tile-h: 28px;
   }
-  .brand h1 { font-size: 22px; }
-  .avatar-ring { width: 92px; height: 92px; }
+  .brand h1 { font-size: 20px; }
+  .pos-left .avatar-ring,
+  .pos-right .avatar-ring,
+  .pos-top .avatar-ring { width: 72px; height: 72px; }
   .tile-wall { width: min(360px, 40vw); height: min(360px, 40vw); }
   .meta { font-size: 13px; gap: 14px; }
 }
@@ -1536,33 +1588,42 @@ button { font-family: inherit; }
 
 
 
-/* Tips control in dock (with Discard / Sort) */
+/* Tips control in dock (with Discard / Sort) — compact for one-line dock-bar */
 .dock-tips {
   display: inline-flex;
-  margin-left: 4px;
+  align-items: center;
+  margin-left: 2px;
+  gap: 0;
+  flex-shrink: 0;
 }
 .act.tips-act {
   background: linear-gradient(180deg, #3a4a5c, #243040);
   color: #dce8f5;
   border: 1px solid rgba(126, 200, 255, 0.35);
-  min-width: 96px;
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
 }
 .act.tips-act.on {
   background: linear-gradient(180deg, #4a7aaa, #2a5078);
   color: #fff;
-  box-shadow: 0 0 0 1px rgba(126, 200, 255, 0.5), 0 4px 12px rgba(0,0,0,.35);
+  box-shadow: 0 0 0 1px rgba(126, 200, 255, 0.5), 0 2px 8px rgba(0,0,0,.35);
 }
 .act.auto-act {
   background: linear-gradient(180deg, #3a5c4a, #243828);
   color: #dcf5e4;
   border: 1px solid rgba(126, 255, 180, 0.35);
-  min-width: 110px;
-  margin-left: 4px;
+  min-width: 0;
+  margin-left: 2px;
+  padding: 5px 8px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
 }
 .act.auto-act.on {
   background: linear-gradient(180deg, #3a9a6a, #2a7050);
   color: #fff;
-  box-shadow: 0 0 0 1px rgba(126, 255, 180, 0.5), 0 4px 12px rgba(0,0,0,.35);
+  box-shadow: 0 0 0 1px rgba(126, 255, 180, 0.5), 0 2px 8px rgba(0,0,0,.35);
 }
 
 
@@ -1610,37 +1671,56 @@ button { font-family: inherit; }
 .wallet-delta.down { color: #f5a6a6; }
 
 
-/* Human dock: A centered under J; hand under avatar; keep banner thin */
-.dock-top {
+/* Human dock: hand alone; avatar+cash+actions share one compact controls row */
+.dock-bar {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-start;
+  gap: 4px 6px;
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  overflow: hidden;
-  padding: 0;
+  padding: 2px 0 0;
+  min-width: 0;
 }
-.dock-top .avatar-wrap {
+.dock-bar .avatar-wrap {
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   margin: 0;
   flex-shrink: 0;
-  gap: 8px;
+  gap: 4px;
 }
-.dock-top .avatar-ring {
+.dock-bar .avatar-ring {
   width: var(--dock-avatar);
   height: var(--dock-avatar);
 }
-.dock-top .avatar-meta {
+.dock-bar .avatar-meta {
   align-items: flex-start;
   max-width: none;
+  gap: 2px;
 }
-.dock-top .avatar-meta .avatar-name {
+.dock-bar .avatar-meta .avatar-name {
   align-self: flex-start;
+  font-size: 9px;
+  padding: 1px 5px;
+}
+/* Cash lives in .cash-pill on the dock-bar — hide duplicate chip on avatar */
+.dock-bar .avatar-meta .cash { display: none; }
+.dock-bar .face-toggle {
+  margin-top: 0;
+}
+.dock-bar .cash-pill {
+  order: 0;
+}
+.dock-bar .actions {
+  flex: 1 1 180px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  margin-top: 0;
+  width: auto;
+  max-width: 100%;
 }
 
 
@@ -1657,9 +1737,10 @@ button { font-family: inherit; }
   color: #e8d5a8;
   border: none;
   border-radius: 0;
-  min-width: 56px;
+  min-width: 40px;
   margin: 0;
-  padding: 8px 12px;
+  padding: 5px 8px;
+  font-size: 10px;
 }
 .act.pace-act.on {
   background: linear-gradient(180deg, #c9a24a, #8a6a28);
@@ -1675,7 +1756,8 @@ button { font-family: inherit; }
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid rgba(240, 210, 120, 0.4);
-  margin-top: 2px;
+  margin-top: 0;
+  flex-shrink: 0;
 }
 .face-btn {
   border: none;
@@ -1700,8 +1782,8 @@ button { font-family: inherit; }
 .act.next-round-dock {
   flex: 1;
   max-width: 280px;
-  min-height: 48px;
-  font-size: 15px;
+  min-height: 36px;
+  font-size: 13px;
   background: linear-gradient(180deg, #e7c36a, #c9a24a);
   color: #1a1208;
 }
@@ -1710,29 +1792,25 @@ button { font-family: inherit; }
 /* Landscape phones: keep the bottom banner slim */
 @media (max-height: 500px) and (orientation: landscape) {
   :root {
-    --dock-avatar: 52px;
-    --tile-w: clamp(40px, 6.5vw, 48px);
+    --dock-avatar: 40px;
+    --tile-w: clamp(32px, 5.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.35);
+    --human-tile-w: clamp(42px, 7vw, 50px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.35);
+    --mini-w: clamp(18px, 3.8vw, 24px);
+    --mini-h: calc(var(--mini-w) * 1.35);
   }
   .dock {
-    padding-top: 2px;
-    padding-bottom: max(4px, var(--safe-bottom));
+    padding-top: 1px;
+    padding-bottom: max(2px, var(--safe-bottom));
   }
-  .dock-top {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-  }
-  .dock-top .avatar-wrap {
-    order: 0;
+  .dock-bar {
+    flex-wrap: nowrap;
+    gap: 4px;
   }
   .hand-row {
-    order: 1;
-    flex: 1 1 100%;
     padding-top: 0;
   }
-  .actions { margin-top: 2px; gap: 4px; }
-  .act { padding: 4px 8px; min-height: 36px; font-size: 11px; }
+  .actions { margin-top: 0; gap: 3px; }
+  .act { padding: 3px 6px; min-height: 30px; font-size: 10px; }
 }

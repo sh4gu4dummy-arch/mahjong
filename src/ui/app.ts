@@ -204,14 +204,19 @@ function playerAvatarSrc(): string {
   return getAFace() === "camera" ? "avatars/player-face.png?v=face2" : "avatars/player.png?v=a1";
 }
 
-const HOLD_POSE_V = "hold1";
+const HOLD_POSE_V = "hold2";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
-  // Holding an item uses a gripped full-body pose (overrides face toggle for now).
+  const face = getAFace() === "camera";
+  if (prop === "cigarette") {
+    return face
+      ? `chars/player-hold-cigarette-face.png?v=${HOLD_POSE_V}`
+      : `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
+  }
+  // Beer/coffee still only have back-facing holds; face toggle returns after put-down.
   if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
   if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
-  if (prop === "cigarette") return `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
-  return getAFace() === "camera" ? "chars/player-face.png?v=face2" : "chars/player-full.png?v=cut2";
+  return face ? "chars/player-face.png?v=face2" : "chars/player-full.png?v=cut2";
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {
@@ -622,7 +627,6 @@ export function render(): void {
     <header class="topbar">
       <div class="brand"><h1>${t("brand")}</h1></div>
       <div class="topbar-main">
-        ${cashPill()}
         <button class="btn shop-btn" data-act="shop">${t("shop")}</button>
       </div>
       ${overflowMenu(mute)}
@@ -655,11 +659,12 @@ export function render(): void {
         </div>
       </div>
       <div class="dock">
-        <div class="dock-top">
+        <div class="hand-row">${humanHandHtml()}</div>
+        <div class="dock-bar">
           ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
-          <div class="hand-row">${humanHandHtml()}</div>
+          ${cashPill()}
+          <div class="actions">${turnButtons()}${tipsToggle()}</div>
         </div>
-        <div class="actions">${turnButtons()}${tipsToggle()}</div>
       </div>
     </div>
     ${overlay()}
