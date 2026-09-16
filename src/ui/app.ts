@@ -321,7 +321,8 @@ function faceFlipBtn(where: "dock" | "shop"): string {
   const next = face === "camera" ? "away" : "camera";
   const label = face === "camera" ? t("faceCamera") : t("faceAway");
   // Tiny corner badge on the A avatar — flips camera/away
-  return `<button type="button" class="face-flip" data-act="a-face" data-face="${next}" data-where="${where}" aria-label="${t("faceAria")}: ${label}" title="${t("faceAria")}">↻</button>`;
+  const extra = where === "shop" ? " shop-face-flip" : "";
+  return `<button type="button" class="face-flip${extra}" data-act="a-face" data-face="${next}" data-where="${where}" aria-label="${t("faceAria")}: ${label}" title="${t("faceAria")}">↻</button>`;
 }
 
 function avatarHtml(i: number, active: boolean): string {
@@ -550,7 +551,6 @@ function shopOverlay(): string {
       <div class="shop-char-full you">
         <div class="shop-char-body">
           <img class="shop-full" src="${playerFullSrc(seatProp[0]?.id)}" alt="${t("seatYou")}" draggable="false" />
-          ${faceFlipBtn("shop")}
         </div>
       </div>
       <div class="shop-char-full opp">
@@ -558,6 +558,7 @@ function shopOverlay(): string {
           <img class="shop-full" src="${oppositeFullSrc(seatProp[2]?.id)}" alt="${t("seatOpp")}" draggable="false" />
         </div>
       </div>
+      ${faceFlipBtn("shop")}
     </div>
     <aside class="shop-panel">
       <div class="shop-panel-head">

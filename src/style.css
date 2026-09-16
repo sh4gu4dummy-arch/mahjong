@@ -2212,12 +2212,14 @@ button { font-family: inherit; }
   min-height: 16px;
   font-size: 10px;
 }
-.shop-char-body .face-flip {
-  /* Near the head — not by the feet under the mobile catalog sheet */
-  right: 2%;
-  top: 6%;
-  bottom: auto;
-  z-index: 20;
+/* Date Face flip: corner of the park stage, clear of A/J */
+.shop-stage > .shop-face-flip {
+  position: absolute;
+  left: max(8px, var(--safe-left));
+  bottom: 8px;
+  top: auto;
+  right: auto;
+  z-index: 12;
   width: 40px;
   height: 40px;
   min-width: 40px;
