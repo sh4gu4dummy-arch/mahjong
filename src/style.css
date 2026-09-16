@@ -188,6 +188,19 @@ button { font-family: inherit; }
   100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(0.98); }
 }
 
+/* Date shop: spend/gain float sits under the balance pill, not above the topbar */
+.shop-topbar .cash-float {
+  top: calc(100% + 2px);
+  bottom: auto;
+  animation-name: cash-float-down;
+}
+@keyframes cash-float-down {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(0.92); }
+  12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  70% { opacity: 1; transform: translateX(-50%) translateY(8px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.98); }
+}
+
 .topbar-main {
   display: flex;
   align-items: center;

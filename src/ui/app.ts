@@ -545,7 +545,7 @@ function shopOverlay(): string {
     </div>`;
   }).join("");
   return `<div class="shop-scene" role="dialog" aria-label="${t("shopTitle")}">
-    <div class="shop-bg" style="background-image:url('bg/park.png')" aria-hidden="true"></div>
+    <div class="shop-bg" style="background-image:url('bg/park.png?v=park2')" aria-hidden="true"></div>
     <div class="shop-stage">
       <div class="shop-char-full you">
         <div class="shop-char-body">
