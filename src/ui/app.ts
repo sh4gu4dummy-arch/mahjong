@@ -201,7 +201,7 @@ function seatRelLabel(i: number): string {
 }
 
 function playerAvatarSrc(): string {
-  return getAFace() === "camera" ? "avatars/player-face.png?v=face2" : "avatars/player.png?v=a1";
+  return getAFace() === "camera" ? "avatars/player-face.png?v=face3" : "avatars/player.png?v=a1";
 }
 
 const HOLD_POSE_V = "hold2";
@@ -216,7 +216,7 @@ function playerFullSrc(prop?: ShopPropId | null): string {
   // Beer/coffee still only have back-facing holds; face toggle returns after put-down.
   if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
   if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
-  return face ? "chars/player-face.png?v=face2" : "chars/player-full.png?v=cut2";
+  return face ? "chars/player-face.png?v=face3" : "chars/player-full.png?v=cut2";
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {
