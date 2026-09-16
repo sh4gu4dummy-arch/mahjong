@@ -43,6 +43,32 @@ let resultDismissed = false;
 let toastText = "";
 let toastTimer: number | null = null;
 
+/** Float +/-$ near cash pill when wallet changes (spend & gain both green). */
+let trackedCash: number | null = null;
+let cashFloat: { text: string; key: number } | null = null;
+let cashFloatTimer: number | null = null;
+let cashFloatKey = 0;
+
+function syncCashFloat(): void {
+  const c = state.players[0]!.cash;
+  if (trackedCash === null) {
+    trackedCash = c;
+    return;
+  }
+  if (c === trackedCash) return;
+  const d = c - trackedCash;
+  trackedCash = c;
+  const text = d > 0 ? `+$${d}` : `-$${Math.abs(d)}`;
+  cashFloatKey += 1;
+  cashFloat = { text, key: cashFloatKey };
+  if (cashFloatTimer !== null) window.clearTimeout(cashFloatTimer);
+  cashFloatTimer = window.setTimeout(() => {
+    cashFloat = null;
+    cashFloatTimer = null;
+    render();
+  }, 1100);
+}
+
 const BEATS_KEY = "aa-mahjong-beats";
 type BeatMap = { L: number; J: number; C: number };
 function loadBeats(): BeatMap {
@@ -258,7 +284,7 @@ function seatRelLabel(i: number): string {
 }
 
 function playerAvatarSrc(): string {
-  return getAFace() === "camera" ? "avatars/player-face.png?v=face3" : "avatars/player.png?v=a1";
+  return getAFace() === "camera" ? "avatars/player-face.png?v=face4" : "avatars/player.png?v=a1";
 }
 
 const HOLD_POSE_V = "hold2";
@@ -283,28 +309,28 @@ function oppositeFullSrc(prop?: ShopPropId | null): string {
   return "chars/opposite-full.png?v=cut2";
 }
 
-function faceToggleHtml(where: "dock" | "shop"): string {
+function faceFlipBtn(where: "dock" | "shop"): string {
   const face = getAFace();
-  return `<div class="face-toggle" role="group" aria-label="${t("faceAria")}" data-where="${where}">
-    <button type="button" class="face-btn ${face === "away" ? "on" : ""}" data-act="a-face" data-face="away">${t("faceAway")}</button>
-    <button type="button" class="face-btn ${face === "camera" ? "on" : ""}" data-act="a-face" data-face="camera">${t("faceCamera")}</button>
-  </div>`;
+  const next = face === "camera" ? "away" : "camera";
+  const label = face === "camera" ? t("faceCamera") : t("faceAway");
+  // Tiny corner badge on the A avatar — flips camera/away
+  return `<button type="button" class="face-flip" data-act="a-face" data-face="${next}" data-where="${where}" aria-label="${t("faceAria")}: ${label}" title="${t("faceAria")}">↻</button>`;
 }
 
 function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
   const src = i === 0 ? playerAvatarSrc() : SEAT_AVATAR[i]!;
   const rel = seatRelLabel(i);
-  const toggle = i === 0 ? faceToggleHtml("dock") : "";
+  const flip = i === 0 ? faceFlipBtn("dock") : "";
   // No floating prop stickers on circular avatars
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
       <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
+      ${flip}
     </div>
     <div class="avatar-meta">
       <span class="avatar-name">${rel}</span>
       ${cashChip(p)}
-      ${toggle}
     </div>
   </div>`;
 }
@@ -347,8 +373,8 @@ function visualWallCount(): number {
 }
 
 function wallSideHtml(count: number, side: string): string {
-  // Single-layer clean wall: one row of backs per side (no 2-high offset stacks).
-  const maxShow = 17;
+  // Cap tiles per side so the square wall fits on phones (all 4 sides visible).
+  const maxShow = 8;
   const show = Math.min(Math.max(0, count), maxShow);
   const items = Array.from({ length: show }, () =>
     `<span class="tile back wall-tile">${backFaceHtml()}</span>`,
@@ -372,8 +398,9 @@ function tileWallHtml(last: Tile | null = null): string {
     ? `<div class="wall-hub last-discard-slot">
         <span class="label">${t("lastDiscard")}</span>
         ${tileEl(last, { last: true, toss: true })}
+        <span class="wall-count">${n}</span>
       </div>`
-    : `<div class="wall-hub" aria-hidden="true"></div>`;
+    : `<div class="wall-hub"><span class="wall-count">${n}</span></div>`;
   // Sides: bottom(East-facing), right, top, left — visual only
   return `<div class="tile-wall" aria-label="${t("wall")} ${n}">
     ${wallSideHtml(counts[2]!, "top")}
@@ -512,9 +539,9 @@ function shopOverlay(): string {
       <div class="shop-char-full you">
         <div class="shop-char-body">
           <img class="shop-full" src="${playerFullSrc(seatProp[0]?.id)}" alt="${t("seatYou")}" draggable="false" />
+          ${faceFlipBtn("shop")}
         </div>
         <span class="shop-char-label">${t("seatYou")}</span>
-        ${faceToggleHtml("shop")}
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
@@ -524,8 +551,10 @@ function shopOverlay(): string {
       </div>
     </div>
     <aside class="shop-panel">
-      <h2>${t("shopTitle")}</h2>
-      <p class="sub">${t("shopSub")} ${formatCash(cash)}</p>
+      <div class="shop-panel-head">
+        <h2>${t("shopTitle")}</h2>
+        <span class="shop-cash">${formatCash(cash)}</span>
+      </div>
       <div class="shop-catalog">${items}</div>
       ${flash}
       ${cash < 1 ? `<p class="sub">${t("walletEmpty")}</p>` : ""}
@@ -626,19 +655,20 @@ function humanHandHtml(): string {
 }
 
 
-function cashPill(): string {
-  return `<span class="cash-pill">${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>`;
+function cashPill(opts: { float?: boolean } = {}): string {
+  const flo = opts.float && cashFloat
+    ? `<span class="cash-float" data-k="${cashFloat.key}" aria-hidden="true">${cashFloat.text}</span>`
+    : "";
+  return `<span class="cash-pill-wrap"><span class="cash-pill">${t("you")} <b>${formatCash(state.players[0]!.cash)}</b></span>${flo}</span>`;
 }
 
 function overflowMenu(mute: string): string {
-  const b = loadBeats();
   return `<div class="topbar-more">
     <button type="button" class="btn ghost menu-btn" data-act="menu-toggle" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="${t("menu")}">⋯</button>
     <div class="overflow-menu ${menuOpen ? "open" : ""}" role="menu">
       <div class="overflow-meta">
         <span>${t("hand")} <b>${state.handNumber}</b></span>
         <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
-        <span>${t("beats")} <b>L${b.L} J${b.J} C${b.C}</b></span>
       </div>
       ${langToggle()}
       <button type="button" class="btn ghost overflow-item" data-act="mute" role="menuitem">${mute}</button>
@@ -666,14 +696,16 @@ function tipsToggle(): string {
         <button type="button" class="act pace-act ${pace === "slow" ? "on" : ""}" data-act="auto-pace" data-pace="slow">${t("paceSlow")}</button>
       </div>`
     : "";
+  // Short labels — ON/OFF via .on class (avoids "Tips · Off" clipping mid-word on phones)
   return `<div class="tips-toggle dock-tips" role="group" aria-label="${t("tipsAria")}">
-    <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}">${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}</button>
-    <button type="button" class="act auto-act ${auto ? "on" : ""}" data-act="auto-tips" data-on="${auto ? "0" : "1"}">${t("auto")} · ${auto ? t("autoOn") : t("autoOff")}</button>
+    <button type="button" class="act tips-act ${on ? "on" : ""}" data-act="tips" data-on="${on ? "0" : "1"}" aria-pressed="${on ? "true" : "false"}" title="${t("tips")} · ${on ? t("tipsOn") : t("tipsOff")}">${t("tips")}</button>
+    <button type="button" class="act auto-act ${auto ? "on" : ""}" data-act="auto-tips" data-on="${auto ? "0" : "1"}" aria-pressed="${auto ? "true" : "false"}" title="${t("auto")} · ${auto ? t("autoOn") : t("autoOff")}">${t("auto")}</button>
     ${paceBtns}
   </div>`;
 }
 
 export function render(): void {
+  syncCashFloat();
   consumeBeats();
   const mute = isMuted() ? t("unmute") : t("mute");
   const last = state.lastDiscard;
@@ -685,7 +717,7 @@ export function render(): void {
       <header class="topbar shop-topbar">
         <div class="brand"><h1>${t("brand")}</h1><span class="app-ver">v${APP_VERSION}</span></div>
         <div class="topbar-main">
-          ${cashPill()}
+          ${cashPill({ float: true })}
           <button class="btn" data-act="shop-close">${t("close")}</button>
         </div>
         ${overflowMenu(mute)}
@@ -744,7 +776,7 @@ export function render(): void {
         <div class="hand-row">${humanHandHtml()}</div>
         <div class="dock-bar">
           ${avatarHtml(0, state.current === 0 && state.phase !== "over" && state.phase !== "bet" && !dealReveal)}
-          ${cashPill()}
+          ${cashPill({ float: true })}
           <div class="actions">${turnButtons()}${tipsToggle()}</div>
         </div>
       </div>
