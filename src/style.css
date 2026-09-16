@@ -1150,7 +1150,8 @@ button { font-family: inherit; }
     --dock-avatar: 76px;
     --mini-w: clamp(22px, 5.8vw, 28px);
     --mini-h: calc(var(--mini-w) * 1.375);
-    --human-tile-w: clamp(40px, 10.2vw, 46px);
+    /* Default; .hand-row overrides to fit 14 tiles on S25-class widths */
+    --human-tile-w: 36px;
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
   }
   .brand h1 { font-size: 12px; max-width: 28vw; }
@@ -1241,6 +1242,28 @@ button { font-family: inherit; }
   .hand-row {
     padding: 4px 2px 6px;
     margin-bottom: 2px;
+    /* Fit a full 14-tile hand on ~360–390 CSS px (S25) without horizontal scroll */
+    --hand-fit-n: 14;
+    --hand-fit-gap: 1px;
+    --human-tile-w: min(
+      42px,
+      calc((100% - (var(--hand-fit-n) - 1) * var(--hand-fit-gap)) / var(--hand-fit-n))
+    );
+    --human-tile-h: calc(var(--human-tile-w) * 1.22);
+    gap: var(--hand-fit-gap);
+    justify-content: center;
+    overflow-x: hidden; /* must fit; no clipped mystery hand */
+  }
+  .hand-row .tile.hand-tile {
+    --w: var(--human-tile-w);
+    --h: var(--human-tile-h);
+    width: var(--w);
+    height: var(--h);
+    min-width: var(--w);
+    max-width: var(--w);
+    min-height: var(--h);
+    max-height: var(--h);
+    flex: 0 0 var(--w);
   }
   .dock-bar {
     display: grid;
@@ -1333,7 +1356,7 @@ button { font-family: inherit; }
     --dock-avatar: 68px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
-    --human-tile-w: clamp(38px, 9.6vw, 44px);
+    --human-tile-w: 34px;
     --human-tile-h: calc(var(--human-tile-w) * 1.22);
     --mini-w: clamp(20px, 5.4vw, 26px);
     --mini-h: calc(var(--mini-w) * 1.375);
