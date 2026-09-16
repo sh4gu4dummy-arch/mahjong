@@ -5,7 +5,7 @@ const KEY = "aa-mahjong-lang";
 const dict = {
   mute: { zh: "静音", en: "Mute" },
   unmute: { zh: "取消静音", en: "Unmute" },
-  shop: { zh: "约会", en: "Date" },
+  shop: { zh: "约会 ❤️", en: "Date ❤️" },
   next: { zh: "下一局", en: "Next" },
   reset: { zh: "重置", en: "Reset" },
   deal: { zh: "开局", en: "Deal" },
