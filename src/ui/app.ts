@@ -15,8 +15,10 @@ import {
   humanPass,
   nextHand,
   resetTable,
+  selfTestSettle,
 } from "../game/engine";
-import { selfTestWin } from "../game/win";
+import { rollingPayout, selfTestWin } from "../game/win";
+import { APP_VERSION } from "../version";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
 import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, getAFace, loadAFace, setAFace, t, type Lang, type AutoPace, type AFace } from "./i18n";
@@ -38,6 +40,63 @@ let shopOpen = false;
 let shopFlash = "";
 let menuOpen = false;
 let resultDismissed = false;
+let toastText = "";
+let toastTimer: number | null = null;
+
+const BEATS_KEY = "aa-mahjong-beats";
+type BeatMap = { L: number; J: number; C: number };
+function loadBeats(): BeatMap {
+  try {
+    const raw = localStorage.getItem(BEATS_KEY);
+    if (!raw) return { L: 0, J: 0, C: 0 };
+    const o = JSON.parse(raw) as Partial<BeatMap>;
+    return {
+      L: typeof o.L === "number" ? o.L : 0,
+      J: typeof o.J === "number" ? o.J : 0,
+      C: typeof o.C === "number" ? o.C : 0,
+    };
+  } catch {
+    return { L: 0, J: 0, C: 0 };
+  }
+}
+function saveBeats(b: BeatMap): void {
+  try {
+    localStorage.setItem(BEATS_KEY, JSON.stringify(b));
+  } catch {
+    /* ignore */
+  }
+}
+function recordBeats(names: string[]): void {
+  if (!names.length) return;
+  const b = loadBeats();
+  const unique: string[] = [];
+  for (const n of names) {
+    if (n === "L" || n === "J" || n === "C") {
+      b[n] += 1;
+      unique.push(n);
+    }
+  }
+  saveBeats(b);
+  if (!unique.length) return;
+  const zh = unique.map((n) => `你击败了 ${n}！`).join(" ");
+  const en = unique.map((n) => `You beat ${n}!`).join(" ");
+  showToast(getLang() === "zh" ? zh : en);
+}
+function showToast(msg: string): void {
+  toastText = msg;
+  if (toastTimer !== null) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastText = "";
+    toastTimer = null;
+    render();
+  }, 2800);
+}
+function consumeBeats(): void {
+  if (!state.justBeaten?.length) return;
+  const names = [...state.justBeaten];
+  state.justBeaten = [];
+  recordBeats(names);
+}
 
 /** UI-only dealing: how many tiles revealed per seat (engine already dealt). */
 let dealReveal: [number, number, number, number] | null = null;
@@ -187,8 +246,6 @@ function riverHtml(p: Player): string {
 }
 
 function cashChip(p: Player): string {
-  // Only the human wallet is visible; AI money is unlimited and hidden.
-  if (!p.isHuman) return "";
   return `<span class="cash">${formatCash(p.cash)}</span>`;
 }
 
@@ -388,12 +445,22 @@ function turnButtons(): string {
 function payoutLines(): string {
   const w = state.winResult;
   if (!w) return "";
-  if (!w.payouts.length) {
-    return `<p class="sub">${t("stakeAmount")} $${w.stake} · ${t("noCashMoved")}</p>`;
-  }
   const names = state.players.map((_, i) => seatRelLabel(i));
+  const baseMult = rollingPayout(1, Math.max(1, w.fan));
+  const formula =
+    w.stake > 0
+      ? `<p class="sub rolling-formula">${t("rollingFan")}: $${w.stake} × 2^(${w.fan}-1) = $${w.stake * baseMult}${
+          w.selfDraw ? "" : ` · ${t("fangPao")}`
+        }</p>`
+      : `<p class="sub">${t("stakeAmount")} $0</p>`;
+  if (!w.payouts.length) {
+    return `${formula}<p class="sub">${t("noCashMoved")}</p>${eggLines()}`;
+  }
   const rows = w.payouts
-    .map((x) => `<li><span>${names[x.from]} → ${names[x.to]}</span><span class="pts">${formatCash(x.amount)}</span></li>`)
+    .map((x) => {
+      const fanBit = x.fan != null ? ` · ${x.fan}${t("fanUnit")}` : "";
+      return `<li><span>${names[x.from]} → ${names[x.to]}${fanBit}</span><span class="pts">${formatCash(x.amount)}</span></li>`;
+    })
     .join("");
   const scheme = w.selfDraw ? t("paySelf") : t("payDiscard");
   let youNet = 0;
@@ -407,7 +474,17 @@ function payoutLines(): string {
       : youNet < 0
         ? `<p class="sub wallet-delta down">${t("youPaid")} ${formatCash(-youNet)}</p>`
         : `<p class="sub wallet-delta">${t("noWalletChange")}</p>`;
-  return `<p class="sub">${scheme} · ${t("stakeAmount")} $${w.stake}</p><ul class="fan-list">${rows}</ul>${youLine}`;
+  return `${formula}<p class="sub">${scheme} · ${t("stakeAmount")} $${w.stake} · ${w.fan} ${t("fanUnit")}</p><ul class="fan-list">${rows}</ul>${youLine}${eggLines()}`;
+}
+
+function eggLines(): string {
+  const eggs = state.eggPayouts ?? [];
+  if (!eggs.length) return "";
+  const names = state.players.map((_, i) => seatRelLabel(i));
+  const rows = eggs
+    .map((x) => `<li><span>${names[x.from]} → ${names[x.to]}</span><span class="pts">${formatCash(x.amount)}</span></li>`)
+    .join("");
+  return `<p class="sub">${t("eggMoney")}</p><ul class="fan-list">${rows}</ul>`;
 }
 
 function shopOverlay(): string {
@@ -494,6 +571,7 @@ function overlay(): string {
     return `<div class="overlay"><div class="modal">
       <h2>${t("drawGame")}</h2>
       <p class="sub">${t("drawGameSub")}</p>
+      ${eggLines()}
       <div class="modal-actions">
         <button class="btn" data-act="next">${t("nextRound")}</button>
         <button class="btn ghost" data-act="close-result">${t("closeResult")}</button>
@@ -520,7 +598,7 @@ function overlay(): string {
     <div class="win-tiles">${melds}${tiles}</div>
     <ul class="fan-list">${lines}</ul>
     ${payoutLines()}
-    <div class="balances"><span>${t("you")} ${formatCash(state.players[0]!.cash)}</span></div>
+    <div class="balances">${[0,1,2,3].map((i) => `<span>${seatRelLabel(i)} ${formatCash(state.players[i]!.cash)}</span>`).join("")}</div>
     <div class="modal-actions">
       <button class="btn" data-act="next">${t("nextRound")}</button>
       <button class="btn ghost" data-act="close-result">${t("closeResult")}</button>
@@ -553,12 +631,14 @@ function cashPill(): string {
 }
 
 function overflowMenu(mute: string): string {
+  const b = loadBeats();
   return `<div class="topbar-more">
     <button type="button" class="btn ghost menu-btn" data-act="menu-toggle" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="${t("menu")}">⋯</button>
     <div class="overflow-menu ${menuOpen ? "open" : ""}" role="menu">
       <div class="overflow-meta">
         <span>${t("hand")} <b>${state.handNumber}</b></span>
         <span>${t("stake")} <b>${formatCash(state.stake)}</b></span>
+        <span>${t("beats")} <b>L${b.L} J${b.J} C${b.C}</b></span>
       </div>
       ${langToggle()}
       <button type="button" class="btn ghost overflow-item" data-act="mute" role="menuitem">${mute}</button>
@@ -594,6 +674,7 @@ function tipsToggle(): string {
 }
 
 export function render(): void {
+  consumeBeats();
   const mute = isMuted() ? t("unmute") : t("mute");
   const last = state.lastDiscard;
   const playing = state.phase !== "bet";
@@ -602,7 +683,7 @@ export function render(): void {
   if (shopOpen) {
     root.innerHTML = `
       <header class="topbar shop-topbar">
-        <div class="brand"><h1>${t("brand")}</h1></div>
+        <div class="brand"><h1>${t("brand")}</h1><span class="app-ver">v${APP_VERSION}</span></div>
         <div class="topbar-main">
           ${cashPill()}
           <button class="btn" data-act="shop-close">${t("close")}</button>
@@ -625,7 +706,7 @@ export function render(): void {
 
   root.innerHTML = `
     <header class="topbar">
-      <div class="brand"><h1>${t("brand")}</h1></div>
+      <div class="brand"><h1>${t("brand")}</h1><span class="app-ver">v${APP_VERSION}</span></div>
       <div class="topbar-main">
         <button class="btn shop-btn" data-act="shop">${t("shop")}</button>
       </div>
@@ -645,6 +726,7 @@ export function render(): void {
         <button class="btn" data-act="reset">${t("reset")}</button>
       </div>
     </header>
+    ${toastText ? `<div class="toast" role="status">${toastText}</div>` : ""}
     <div class="stage">
       <div class="table-frame">
         <div class="table">
@@ -1182,6 +1264,7 @@ function onDblClick(ev: Event): void {
 
 export function start(el: HTMLElement): void {
   selfTestWin();
+  selfTestSettle();
   loadMute();
   loadLang();
   loadTips();

@@ -40,6 +40,10 @@ export interface Payout {
   from: number;
   to: number;
   amount: number;
+  /** Effective fan used for this payment (rolling-fan wins). */
+  fan?: number;
+  /** Egg/kong payment marker for UI. */
+  egg?: boolean;
 }
 
 export interface WinResult {
@@ -49,6 +53,7 @@ export interface WinResult {
   pairKind: string;
   melds: Meld[];
   concealed: Tile[];
+  /** Shared fan total (includes 自摸 if any; excludes 放炮). */
   fan: number;
   lines: FanLine[];
   payouts: Payout[];
@@ -94,4 +99,8 @@ export interface GameState {
   messageZh: string;
   stake: number;
   handNumber: number;
+  /** Kong/egg payouts settled this hand (immediate). */
+  eggPayouts: Payout[];
+  /** AI names (L/J/C) refilled after going broke this action — UI toasts + beat counts. */
+  justBeaten: string[];
 }

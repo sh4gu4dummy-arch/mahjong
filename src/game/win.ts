@@ -113,9 +113,9 @@ export function dongbeiFlags(concealed: Tile[], exposed: Meld[], pattern: Patter
   return { opened, hasKe, dragonEyes, yaojiu, threeSuits };
 }
 
+/** Changchun: closed wins (立胡) allowed; keep 刻/将 · 幺九 · 三门齐. */
 export function dongbeiLegal(concealed: Tile[], exposed: Meld[], pattern: Pattern): boolean {
   const f = dongbeiFlags(concealed, exposed, pattern);
-  if (!f.opened) return false;
   if (!f.hasKe && !f.dragonEyes) return false;
   if (!f.yaojiu) return false;
   if (!f.threeSuits) return false;
@@ -132,17 +132,73 @@ export function wouldWinWith(hand: Tile[], extra: Tile, exposed: Meld[]): boolea
   return isWinningHand([...hand, extra], exposed);
 }
 
+/** Rolling-fan cash: stake * 2^(fan-1). Fan < 1 → 0. */
+export function rollingPayout(stake: number, fan: number): number {
+  if (stake <= 0 || fan < 1) return 0;
+  return stake * 2 ** (fan - 1);
+}
+
+function removeOneKind(tiles: Tile[], kind: string): Tile[] | null {
+  const idx = tiles.findIndex((t) => t.kind === kind);
+  if (idx < 0) return null;
+  return [...tiles.slice(0, idx), ...tiles.slice(idx + 1)];
+}
+
+/**
+ * Detect 夹胡 as edge / middle / pair wait when the winning tile's role in a
+ * formed pattern is 边张、嵌张、单吊、or 对倒.
+ */
+export function isJiaHu(concealedWithWin: Tile[], exposed: Meld[], winKind: string): boolean {
+  const rest = removeOneKind(concealedWithWin, winKind);
+  if (!rest) return false;
+  if (!isWinningHand(concealedWithWin, exposed)) return false;
+  const pattern = findPattern(concealedWithWin, exposed.length);
+  if (!pattern) return false;
+
+  const nInRest = rest.filter((t) => t.kind === winKind).length;
+
+  // 单吊 — pair wait
+  if (nInRest === 1 && pattern.pair === winKind) return true;
+
+  // 对倒 — pung wait (pair wait of sorts)
+  if (nInRest === 2 && pattern.concealedMelds.some((m) => m.type === "pung" && m.kinds[0] === winKind)) {
+    return true;
+  }
+
+  // Chow roles: 夹张 / 边张
+  for (const m of pattern.concealedMelds) {
+    if (m.type !== "chow") continue;
+    if (!m.kinds.includes(winKind)) continue;
+    if (!isSuited(winKind)) continue;
+    const vals = m.kinds.map((k) => Number(k.slice(1))).sort((a, b) => a - b);
+    const winVal = Number(winKind.slice(1));
+    // Middle nest
+    if (winVal === vals[0]! + 1 && winVal === vals[2]! - 1) return true;
+    // Edge: 3 of 123, or 7 of 789
+    if (vals[0] === 1 && vals[1] === 2 && vals[2] === 3 && winVal === 3) return true;
+    if (vals[0] === 7 && vals[1] === 8 && vals[2] === 9 && winVal === 7) return true;
+  }
+  return false;
+}
+
+export interface ScoreOpts {
+  dealerWin?: boolean;
+  winKind?: string;
+}
+
 export function scoreWin(
   concealed: Tile[],
   exposed: Meld[],
   _winnerSeat: Wind,
   _roundWind: Wind,
   selfDraw: boolean,
+  opts: ScoreOpts = {},
 ): { fan: number; lines: FanLine[]; pattern: Pattern } | null {
   const pattern = findPattern(concealed, exposed.length);
   if (!pattern) return null;
   if (!dongbeiLegal(concealed, exposed, pattern)) return null;
 
+  const flags = dongbeiFlags(concealed, exposed, pattern);
   const allMelds: { type: "chow" | "pung" | "kong"; kinds: string[] }[] = [
     ...pattern.concealedMelds,
     ...exposed.map((m) => ({
@@ -154,29 +210,25 @@ export function scoreWin(
   const lines: FanLine[] = [];
   const add = (name: string, nameZh: string, fan: number) => lines.push({ name, nameZh, fan });
 
-  add("Opened hand", "开门", 0);
-  if (dongbeiFlags(concealed, exposed, pattern).hasKe) add("Has a pung", "有刻", 0);
+  // Money fans (长春滚番)
+  add("Ping hu", "平胡", 1);
+  if (selfDraw) add("Self-draw", "自摸", 1);
+  if (opts.dealerWin) add("Dealer win", "庄胡", 1);
+  if (!flags.opened) add("Closed hand", "立胡", 1);
+  if (opts.winKind && isJiaHu(concealed, exposed, opts.winKind)) add("Edge/middle/pair wait", "夹胡", 1);
+
+  const types = allMelds.map((m) => (m.type === "kong" ? "pung" : m.type));
+  if (types.every((t) => t === "pung")) add("All pungs", "飘胡", 2);
+
+  // Constraint checkmarks (0 fan — not cash)
+  if (flags.hasKe) add("Has a pung", "有刻", 0);
   else add("Dragon eyes", "中发白将", 0);
   add("Terminal/honor", "带幺九", 0);
   add("Three suits", "三门齐", 0);
+  if (flags.opened) add("Opened hand", "开门", 0);
 
-  for (const m of allMelds) {
-    if (m.type === "chow") continue;
-    const k = m.kinds[0]!;
-    if (k === "dr") add("Red dragon pung", "红中刻", 1);
-    if (k === "dg") add("Green dragon pung", "发财刻", 1);
-    if (k === "dw") add("White dragon pung", "白板刻", 1);
-  }
-
-  const types = allMelds.map((m) => (m.type === "kong" ? "pung" : m.type));
-  if (types.every((t) => t === "pung")) add("All pungs", "对对胡", 2);
-
-  if (selfDraw) add("Self-draw", "自摸", 1);
-
-  const fan = Math.max(1, lines.reduce((s, l) => s + l.fan, 0));
-  if (!lines.some((l) => l.fan > 0)) add("Basic win", "基本胡", 1);
-
-  return { fan, lines, pattern };
+  const fan = lines.reduce((s, l) => s + l.fan, 0);
+  return { fan: Math.max(1, fan), lines, pattern };
 }
 
 export function toWinResult(
@@ -187,8 +239,13 @@ export function toWinResult(
   exposed: Meld[],
   winnerSeat: Wind,
   roundWind: Wind,
+  dealer = 0,
+  winKind?: string,
 ): WinResult | null {
-  const scored = scoreWin(concealed, exposed, winnerSeat, roundWind, selfDraw);
+  const scored = scoreWin(concealed, exposed, winnerSeat, roundWind, selfDraw, {
+    dealerWin: winner === dealer,
+    winKind,
+  });
   if (!scored) return null;
   return {
     winner,
@@ -222,9 +279,9 @@ export function selfTestWin(): void {
     concealed: false,
   });
 
-  // Concealed all-pungs: no 开门
+  // Closed hand with 三门齐 / 刻 / 幺九 — 立胡 allowed
   const closed = [...many("m1", 3, 0), ...many("m2", 3, 3), ...many("m3", 3, 6), ...many("s1", 3, 9), ...many("p1", 2, 12)];
-  if (isWinningHand(closed, [])) throw new Error("win test: closed hand must fail 开门");
+  if (!isWinningHand(closed, [])) throw new Error("win test: closed 立胡 should win");
 
   // Opened pung + three suits + yaojiu
   const rest = [...many("s1", 3, 0), ...many("p1", 3, 3), ...many("m2", 3, 6), ...many("we", 2, 9)];
@@ -256,8 +313,31 @@ export function selfTestWin(): void {
   const noYao = [...many("s2", 3, 0), ...many("p2", 3, 3), ...many("m2", 3, 6), ...many("m5", 2, 9)];
   if (isWinningHand(noYao, [pung("m3", 20)])) throw new Error("win test: no 幺九 should fail");
 
-  // Concealed kong does not open
+  // Concealed kong does not open — but 立胡 still wins when other constraints hold
   const ck: Meld = { type: "kong", tiles: many("m1", 4, 20), concealed: true };
   const afterCk = [...many("s1", 3, 0), ...many("p1", 3, 3), ...many("m2", 3, 6), ...many("we", 2, 9)];
-  if (isWinningHand(afterCk, [ck])) throw new Error("win test: 暗杠 must not count as 开门");
+  if (!isWinningHand(afterCk, [ck])) throw new Error("win test: 暗杠+立胡 should win");
+  if (hasOpened([ck])) throw new Error("win test: 暗杠 must not count as 开门");
+
+  // Rolling fan formula
+  if (rollingPayout(1, 1) !== 1) throw new Error("roll: 1 fan → 1");
+  if (rollingPayout(1, 2) !== 2) throw new Error("roll: 2 fan → 2");
+  if (rollingPayout(1, 3) !== 4) throw new Error("roll: 3 fan → 4");
+  if (rollingPayout(5, 2) !== 10) throw new Error("roll: stake5 × 2^1");
+
+  // scoreWin: 自摸平胡 (non-dealer, opened, not 飘胡) → fan 2
+  const mixed = [
+    t("s1", 0), t("s2", 1), t("s3", 2),
+    ...many("p1", 3, 3),
+    t("m7", 6), t("m8", 7), t("m9", 8),
+    t("we", 9), t("we", 10),
+  ];
+  const scoredZimo = scoreWin(mixed, [chow("m1", "m2", "m3", 20)], "S", "E", true, { dealerWin: false });
+  if (!scoredZimo || scoredZimo.fan !== 2) {
+    throw new Error(`win test: 自摸平胡 fan want 2 got ${scoredZimo?.fan} lines=${JSON.stringify(scoredZimo?.lines)}`);
+  }
+
+  // 点炮平胡 shared fan = 1 (放炮 applied in settle only)
+  const scoredPao = scoreWin(mixed, [chow("m1", "m2", "m3", 20)], "S", "E", false, { dealerWin: false });
+  if (!scoredPao || scoredPao.fan !== 1) throw new Error(`win test: 点炮平胡 fan want 1 got ${scoredPao?.fan}`);
 }

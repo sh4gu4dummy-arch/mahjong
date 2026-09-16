@@ -1,4 +1,4 @@
-import type { Claim, GameState, Player, Tile, Wind } from "./types";
+import type { Claim, GameState, Payout, Player, Tile, Wind } from "./types";
 import {
   buildFullSet,
   nextSeat,
@@ -13,7 +13,7 @@ import {
 } from "./tiles";
 import { addedKongTiles, bestClaim, claimsForPlayer, concealedKongKinds, humanClaimRelevant } from "./claims";
 import { chooseDiscard, pickAiClaim, aiShouldConcealedKong } from "./ai";
-import { isWinningHand, toWinResult } from "./win";
+import { isWinningHand, rollingPayout, toWinResult } from "./win";
 
 const NAMES: { en: string; zh: string }[] = [
   { en: "A", zh: "A" },
@@ -22,7 +22,8 @@ const NAMES: { en: string; zh: string }[] = [
   { en: "C", zh: "C" },
 ];
 
-const START_CASH = 100;
+export const START_CASH = 100;
+export const AI_START_CASH = 1000;
 
 function seatKind(w: Wind): string {
   return { E: "we", S: "ws", W: "ww", N: "wn" }[w];
@@ -41,9 +42,13 @@ function makePlayer(i: number, cash: number): Player {
   };
 }
 
-export function createTable(cash: number[] = [START_CASH, START_CASH, START_CASH, START_CASH]): GameState {
+export function defaultCash(): number[] {
+  return [START_CASH, AI_START_CASH, AI_START_CASH, AI_START_CASH];
+}
+
+export function createTable(cash: number[] = defaultCash()): GameState {
   return {
-    players: [0, 1, 2, 3].map((i) => makePlayer(i, cash[i] ?? START_CASH)),
+    players: [0, 1, 2, 3].map((i) => makePlayer(i, cash[i] ?? (i === 0 ? START_CASH : AI_START_CASH))),
     wall: [],
     current: 0,
     phase: "bet",
@@ -62,6 +67,8 @@ export function createTable(cash: number[] = [START_CASH, START_CASH, START_CASH
     messageZh: "请选择本局赌注。",
     stake: 0,
     handNumber: 1,
+    eggPayouts: [],
+    justBeaten: [],
   };
 }
 
@@ -81,7 +88,7 @@ export function beginRound(state: GameState, requestedStake: number): void {
   const cash = state.players.map((p) => p.cash);
   const stake = Math.max(0, Math.min(Math.floor(requestedStake) || 0, cash[0] ?? 0));
   const wall = shuffle(buildFullSet());
-  const players = [0, 1, 2, 3].map((i) => makePlayer(i, cash[i] ?? START_CASH));
+  const players = [0, 1, 2, 3].map((i) => makePlayer(i, cash[i] ?? (i === 0 ? START_CASH : AI_START_CASH)));
   for (let r = 0; r < 13; r++) {
     for (let p = 0; p < 4; p++) players[p]!.hand.push(wall.pop()!);
   }
@@ -104,6 +111,8 @@ export function beginRound(state: GameState, requestedStake: number): void {
   state.pendingHumanClaims = [];
   state.pendingAiClaims = [];
   state.stake = stake;
+  state.eggPayouts = [];
+  state.justBeaten = [];
   state.message = stake
     ? `Stake $${stake}. Your deal — discard a tile.`
     : "Playing for pride ($0). Discard to begin.";
@@ -138,27 +147,47 @@ function drawFromWall(state: GameState, player: number, fromEnd = false): Tile |
 function finishDrawGame(state: GameState): void {
   state.phase = "over";
   state.drawGame = true;
-  state.message = "Wall exhausted — draw game. Stakes stay.";
-  state.messageZh = "荒庄 — 流局，赌注不动。";
+  // Eggs already settled immediately; nothing outstanding.
+  const eggNote = state.eggPayouts.length
+    ? ` Egg money already settled (${state.eggPayouts.length} xfer).`
+    : "";
+  const eggZh = state.eggPayouts.length ? ` 蛋钱已即时结算（${state.eggPayouts.length} 笔）。` : "";
+  state.message = `Wall exhausted — draw game. Stakes stay.${eggNote}`;
+  state.messageZh = `荒庄 — 流局，赌注不动。${eggZh}`;
 }
 
+/** Human clamped to wallet; AI cash moves for real (can hit 0). */
 function pay(state: GameState, from: number, to: number, amount: number): number {
   if (amount <= 0) return 0;
   const payer = state.players[from]!;
   const payee = state.players[to]!;
-  // AI never go broke — always pay the full stake; bankroll is unlimited / hidden.
-  if (!payer.isHuman) {
-    if (payee.isHuman) payee.cash += amount;
-    return amount;
-  }
-  // Human is clamped to wallet.
-  const amt = Math.min(payer.cash, amount);
+  const amt = Math.min(Math.max(0, payer.cash), amount);
   if (amt <= 0) return 0;
   payer.cash -= amt;
-  if (payee.isHuman) payee.cash += amt;
+  payee.cash += amt;
   return amt;
 }
 
+/** Refill broke AI to AI_START_CASH; record names on state.justBeaten. */
+export function refillBrokeAi(state: GameState): string[] {
+  const beaten: string[] = [];
+  for (let i = 1; i < 4; i++) {
+    const p = state.players[i]!;
+    if (p.cash <= 0) {
+      beaten.push(p.name);
+      p.cash = AI_START_CASH;
+    }
+  }
+  if (beaten.length) state.justBeaten = [...state.justBeaten, ...beaten];
+  return beaten;
+}
+
+/**
+ * Changchun 滚番 settle:
+ * payout = stake * 2^(fan-1)
+ * 自摸: all three pay shared fan (incl. 自摸).
+ * 点炮: all three pay; discarder +1 放炮 on their fan only.
+ */
 function settle(state: GameState): void {
   const w = state.winResult;
   if (!w) return;
@@ -168,18 +197,51 @@ function settle(state: GameState): void {
     w.payouts = [];
     return;
   }
-  const payouts = [];
-  if (w.selfDraw) {
-    for (let i = 0; i < 4; i++) {
-      if (i === w.winner) continue;
-      const amt = pay(state, i, w.winner, stake);
-      if (amt > 0) payouts.push({ from: i, to: w.winner, amount: amt });
-    }
-  } else if (w.loser !== null) {
-    const amt = pay(state, w.loser, w.winner, stake);
-    if (amt > 0) payouts.push({ from: w.loser, to: w.winner, amount: amt });
+  const payouts: Payout[] = [];
+  const baseFan = Math.max(1, w.fan);
+  for (let i = 0; i < 4; i++) {
+    if (i === w.winner) continue;
+    let fan = baseFan;
+    if (!w.selfDraw && w.loser === i) fan = baseFan + 1; // 放炮
+    const due = rollingPayout(stake, fan);
+    const amt = pay(state, i, w.winner, due);
+    if (amt > 0) payouts.push({ from: i, to: w.winner, amount: amt, fan });
   }
   w.payouts = payouts;
+  refillBrokeAi(state);
+}
+
+type EggMode = "open" | "added" | "concealed";
+
+function settleEgg(state: GameState, konger: number, mode: EggMode, discarder?: number): Payout[] {
+  const stake = state.stake;
+  if (stake <= 0) return [];
+  const payouts: Payout[] = [];
+  if (mode === "open") {
+    if (discarder === undefined || discarder === null) return [];
+    const amt = pay(state, discarder, konger, stake);
+    if (amt > 0) payouts.push({ from: discarder, to: konger, amount: amt, egg: true });
+  } else {
+    const mult = mode === "concealed" ? 2 : 1;
+    for (let i = 0; i < 4; i++) {
+      if (i === konger) continue;
+      const amt = pay(state, i, konger, stake * mult);
+      if (amt > 0) payouts.push({ from: i, to: konger, amount: amt, egg: true });
+    }
+  }
+  state.eggPayouts.push(...payouts);
+  refillBrokeAi(state);
+  return payouts;
+}
+
+function eggNote(state: GameState, konger: number, mode: EggMode, batch: Payout[]): void {
+  if (!batch.length) return;
+  const who = state.players[konger]!;
+  const label = mode === "open" ? "open kong" : mode === "added" ? "added kong" : "concealed kong";
+  const labelZh = mode === "open" ? "明杠" : mode === "added" ? "补杠" : "暗杠";
+  const total = batch.reduce((s, p) => s + p.amount, 0);
+  state.message = `Egg (${label}): ${who.name} +$${total}. ${state.message}`;
+  state.messageZh = `蛋钱（${labelZh}）：${who.nameZh} +$${total}。${state.messageZh}`;
 }
 
 export function applyDiscard(state: GameState, tileId: number): { needClaim: boolean } {
@@ -269,7 +331,17 @@ function resolveClaim(state: GameState, claim: Claim): void {
 
   if (claim.type === "win") {
     const hand = [...p.hand, tile];
-    const res = toWinResult(claim.player, discarder, false, hand, p.melds, p.seat, state.roundWind);
+    const res = toWinResult(
+      claim.player,
+      discarder,
+      false,
+      hand,
+      p.melds,
+      p.seat,
+      state.roundWind,
+      state.dealer,
+      tile.kind,
+    );
     // Guard: never end the hand with a null winResult.
     if (!res) return;
     state.pendingHumanClaims = [];
@@ -281,8 +353,9 @@ function resolveClaim(state: GameState, claim: Claim): void {
     settle(state);
     const who = claim.player === 0 ? "You win" : `${p.name} wins`;
     const zh = claim.player === 0 ? "你胡了" : `${p.nameZh} 胡牌`;
-    state.message = `${who}! 点炮 · stake $${state.stake}.`;
-    state.messageZh = `${zh}！点炮结算 $${state.stake}。`;
+    const mult = rollingPayout(1, res.fan);
+    state.message = `${who}! 点炮 · ${res.fan} fan · stake $${state.stake} (×${mult}/base).`;
+    state.messageZh = `${zh}！点炮 · ${res.fan}番 · 赌注 $${state.stake}（底×${mult}）。`;
     return;
   }
 
@@ -305,7 +378,9 @@ function resolveClaim(state: GameState, claim: Claim): void {
     p.hand = sortTiles(rest);
     p.melds.push({ type: "kong", tiles: [...taken, claimed], concealed: false, from: discarder });
     state.current = claim.player;
+    const eggPay = settleEgg(state, claim.player, "open", discarder);
     afterKong(state, claim.player);
+    eggNote(state, claim.player, "open", eggPay);
     return;
   }
 
@@ -396,7 +471,18 @@ export function drawCurrent(state: GameState): Tile | null {
 export function declareSelfWin(state: GameState, player: number): boolean {
   const p = state.players[player]!;
   if (!isWinningHand(p.hand, p.melds)) return false;
-  const res = toWinResult(player, null, true, p.hand, p.melds, p.seat, state.roundWind);
+  const winKind = state.lastDraw?.kind;
+  const res = toWinResult(
+    player,
+    null,
+    true,
+    p.hand,
+    p.melds,
+    p.seat,
+    state.roundWind,
+    state.dealer,
+    winKind,
+  );
   if (!res) return false;
   state.pendingHumanClaims = [];
   state.pendingAiClaims = [];
@@ -406,8 +492,9 @@ export function declareSelfWin(state: GameState, player: number): boolean {
   settle(state);
   const who = player === 0 ? "You win by self-draw" : `${p.name} wins by self-draw`;
   const zh = player === 0 ? "你自摸" : `${p.nameZh} 自摸`;
-  state.message = `${who}! Each other seat pays $${state.stake}.`;
-  state.messageZh = `${zh}！三家各付 $${state.stake}。`;
+  const each = rollingPayout(state.stake, res.fan);
+  state.message = `${who}! ${res.fan} fan — each other seat pays $${each}.`;
+  state.messageZh = `${zh}！${res.fan}番 — 三家各付 $${each}。`;
   return true;
 }
 
@@ -419,6 +506,10 @@ export function declareKong(state: GameState, kind: string, mode: "concealed" | 
     const { taken, rest } = takeKind(p.hand, kind, 4);
     p.hand = sortTiles(rest);
     p.melds.push({ type: "kong", tiles: taken, concealed: true });
+    const eggPay = settleEgg(state, state.current, "concealed");
+    afterKong(state, state.current);
+    eggNote(state, state.current, "concealed", eggPay);
+    return true;
   } else {
     const m = p.melds.find((x) => x.type === "pung" && x.tiles[0]?.kind === kind);
     const t = p.hand.find((x) => x.kind === kind);
@@ -426,9 +517,11 @@ export function declareKong(state: GameState, kind: string, mode: "concealed" | 
     p.hand = p.hand.filter((x) => x.id !== t.id);
     m.type = "kong";
     m.tiles.push(t);
+    const eggPay = settleEgg(state, state.current, "added");
+    afterKong(state, state.current);
+    eggNote(state, state.current, "added", eggPay);
+    return true;
   }
-  afterKong(state, state.current);
-  return true;
 }
 
 export function aiPlayDiscard(state: GameState): number {
@@ -468,4 +561,60 @@ export function windLabel(w: Wind): string {
 
 export function formatCash(n: number): string {
   return `$${n}`;
+}
+
+/** Unit-ish settle checks for Changchun rolling fan (non-dealer winner). */
+export function selfTestSettle(): void {
+  const state = createTable([100, 1000, 1000, 1000]);
+  state.stake = 1;
+  state.dealer = 0;
+
+  // 自摸平胡 fan=2 → each pays 2
+  state.players.forEach((p, i) => {
+    p.cash = i === 0 ? 100 : 1000;
+  });
+  state.winResult = {
+    winner: 1,
+    loser: null,
+    selfDraw: true,
+    pairKind: "we",
+    melds: [],
+    concealed: [],
+    fan: 2,
+    lines: [
+      { name: "Ping hu", nameZh: "平胡", fan: 1 },
+      { name: "Self-draw", nameZh: "自摸", fan: 1 },
+    ],
+    payouts: [],
+    stake: 0,
+  };
+  settle(state);
+  const zimoPays = state.winResult.payouts.map((p) => p.amount).sort((a, b) => a - b);
+  if (zimoPays.length !== 3 || zimoPays.some((a) => a !== 2)) {
+    throw new Error(`settle test: 自摸平胡 each pay 2, got ${JSON.stringify(state.winResult.payouts)}`);
+  }
+  if (state.players[1]!.cash !== 1000 + 6) throw new Error("settle test: zimo winner cash");
+
+  // 点炮平胡 fan=1 → discarder pays 2, others pay 1
+  state.players.forEach((p, i) => {
+    p.cash = i === 0 ? 100 : 1000;
+  });
+  state.justBeaten = [];
+  state.winResult = {
+    winner: 1,
+    loser: 2,
+    selfDraw: false,
+    pairKind: "we",
+    melds: [],
+    concealed: [],
+    fan: 1,
+    lines: [{ name: "Ping hu", nameZh: "平胡", fan: 1 }],
+    payouts: [],
+    stake: 0,
+  };
+  settle(state);
+  const byFrom = new Map(state.winResult.payouts.map((p) => [p.from, p.amount]));
+  if (byFrom.get(2) !== 2) throw new Error(`settle test: discarder pay 2, got ${byFrom.get(2)}`);
+  if (byFrom.get(0) !== 1) throw new Error(`settle test: other(human) pay 1, got ${byFrom.get(0)}`);
+  if (byFrom.get(3) !== 1) throw new Error(`settle test: other pay 1, got ${byFrom.get(3)}`);
 }

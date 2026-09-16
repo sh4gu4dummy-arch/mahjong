@@ -74,6 +74,8 @@ export function loadSave(): SavePayload | null {
     if (!obj.state.players[0]?.isHuman) return null;
     const state = obj.state as GameState;
     if (!Array.isArray(state.pendingAiClaims)) state.pendingAiClaims = [];
+    if (!Array.isArray(state.eggPayouts)) state.eggPayouts = [];
+    if (!Array.isArray(state.justBeaten)) state.justBeaten = [];
     return { v: SAVE_VERSION, state, betDraft, selected };
   } catch {
     return null;

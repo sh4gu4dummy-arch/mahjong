@@ -9,8 +9,8 @@
   --gold-dim: #a4843e;
   --cream: #f7f1e1;
   --ink: #1a120c;
-  --tile-face: #fffaf0;
-  --tile-edge: #cfc3a4;
+  --tile-face: #fffef6;
+  --tile-edge: #b9a878;
   --shadow: rgba(0, 0, 0, 0.45);
   /* Dock-bar avatar (controls row); keep compact to free table height. */
   --dock-avatar: 48px;
@@ -18,10 +18,10 @@
   --tile-w: clamp(36px, 9.5vw, 44px);
   --tile-h: calc(var(--tile-w) * 1.375);
   /* A's hand: larger than opponents for readability. */
-  --human-tile-w: clamp(50px, 12.8vw, 58px);
+  --human-tile-w: clamp(52px, 13.2vw, 60px);
   --human-tile-h: calc(var(--human-tile-w) * 1.375);
   /* L/J/C backs, rivers, melds — small enough to avoid side clipping. */
-  --mini-w: clamp(24px, 6.2vw, 30px);
+  --mini-w: clamp(24px, 6.4vw, 30px);
   --mini-h: calc(var(--mini-w) * 1.375);
   --wall-tile-w: max(8px, calc(var(--tile-w) * 0.26));
   --wall-tile-h: calc(var(--wall-tile-w) * 1.4);
@@ -103,6 +103,38 @@ button { font-family: inherit; }
 }
 /* Dual-brand subtitle removed — never show Northeast beside title */
 .brand .zh { display: none !important; }
+.brand {
+  gap: 6px;
+}
+.app-ver {
+  font-family: "Noto Sans SC", "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(243, 226, 192, 0.72);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 1px;
+}
+.toast {
+  position: fixed;
+  top: calc(40px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: min(92vw, 420px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 12, 6, 0.92);
+  border: 1px solid rgba(212, 175, 103, 0.55);
+  color: #ffe9b0;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  pointer-events: none;
+  text-align: center;
+}
 .meta {
   display: flex;
   gap: 10px;
@@ -568,6 +600,22 @@ button { font-family: inherit; }
   color: #d4c39a;
 }
 
+
+/* Opponent mini faces: keep readable, not washed out */
+.pos-left .tile .face-img,
+.pos-right .tile .face-img,
+.pos-top .tile .face-img,
+.pos-left .tile .face-svg,
+.pos-right .tile .face-svg,
+.pos-top .tile .face-svg {
+  filter: contrast(1.24) saturate(1.15) brightness(0.92);
+}
+.pos-left .tile.back .face-img,
+.pos-right .tile.back .face-img,
+.pos-top .tile.back .face-img {
+  filter: contrast(1.28) saturate(0.88) brightness(1.1) hue-rotate(-6deg);
+}
+
 /* ===== Tiles ===== */
 .tile {
   --w: var(--tile-w);
@@ -578,16 +626,16 @@ button { font-family: inherit; }
   padding: 0;
   border-radius: 5px;
   background:
-    linear-gradient(165deg, #fffef9 0%, #f8f0dc 42%, #e8d9b8 100%);
+    linear-gradient(165deg, #ffffff 0%, #fff8e8 38%, #f0e2c0 100%);
   box-shadow:
-    0 1.5px 0 rgba(255,255,255,.85) inset,
-    0 -1px 0 rgba(120,100,60,.18) inset,
-    1px 0 0 rgba(255,255,255,.35) inset,
-    -1px 0 0 rgba(90,70,40,.12) inset,
-    0 0 0 1px #c4b48a,
-    1px 1px 0 #a89468,
-    2px 3px 0 #7a6848,
-    3px 5px 10px rgba(0,0,0,.42);
+    0 1.5px 0 rgba(255,255,255,.95) inset,
+    0 -1px 0 rgba(90,70,40,.22) inset,
+    1px 0 0 rgba(255,255,255,.45) inset,
+    -1px 0 0 rgba(70,55,30,.16) inset,
+    0 0 0 1.25px #a89058,
+    1px 1px 0 #8a7344,
+    2px 3px 0 #5e4a28,
+    3px 6px 12px rgba(0,0,0,.55);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -629,24 +677,26 @@ button { font-family: inherit; }
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   backface-visibility: hidden;
+  /* Darker / crisper face art against bright cream body */
+  filter: contrast(1.18) saturate(1.12) brightness(0.94);
 }
 .tile.man, .tile.sou, .tile.pin, .tile.wind,
 .tile.dragon-r, .tile.dragon-g, .tile.dragon-w {
   color: var(--ink);
 }
 .tile.back {
-  /* Cream bevel frame; face is FluffyStuff Back.svg */
+  /* Cream bevel frame; face is FluffyStuff Back.svg — keep off the felt */
   background:
-    linear-gradient(165deg, #fffef9 0%, #f8f0dc 42%, #e8d9b8 100%);
+    linear-gradient(165deg, #ffffff 0%, #fff8e8 38%, #f0e2c0 100%);
   box-shadow:
-    0 1.5px 0 rgba(255,255,255,.85) inset,
-    0 -1px 0 rgba(120,100,60,.18) inset,
-    1px 0 0 rgba(255,255,255,.35) inset,
-    -1px 0 0 rgba(90,70,40,.12) inset,
-    0 0 0 1px #c4b48a,
-    1px 1px 0 #a89468,
-    2px 3px 0 #7a6848,
-    3px 5px 10px rgba(0,0,0,.42);
+    0 1.5px 0 rgba(255,255,255,.95) inset,
+    0 -1px 0 rgba(90,70,40,.22) inset,
+    1px 0 0 rgba(255,255,255,.45) inset,
+    -1px 0 0 rgba(70,55,30,.16) inset,
+    0 0 0 1.25px #a89058,
+    1px 1px 0 #8a7344,
+    2px 3px 0 #5e4a28,
+    3px 6px 12px rgba(0,0,0,.55);
   overflow: hidden;
 }
 .tile.back .face-img.back-face,
@@ -657,6 +707,8 @@ button { font-family: inherit; }
   object-fit: fill;
   border-radius: 3px;
   z-index: 1;
+  /* Lift lattice green off table felt: cooler + brighter, not muddy */
+  filter: contrast(1.22) saturate(0.85) brightness(1.08) hue-rotate(-6deg);
 }
 .tile.back .glyph { display: none; }
 .tile.back::after { display: none; content: none; }
@@ -961,12 +1013,13 @@ button { font-family: inherit; }
 @media (max-width: 719px) {
   :root {
     --dock-avatar: 48px;
-    --mini-w: clamp(22px, 5.8vw, 28px);
+    --mini-w: clamp(23px, 6vw, 29px);
     --mini-h: calc(var(--mini-w) * 1.375);
-    --human-tile-w: clamp(50px, 12.6vw, 56px);
+    --human-tile-w: clamp(52px, 13.4vw, 58px);
     --human-tile-h: calc(var(--human-tile-w) * 1.375);
   }
-  .brand h1 { font-size: 12px; max-width: 32vw; }
+  .brand h1 { font-size: 12px; max-width: 28vw; }
+  .app-ver { font-size: 9px; }
   .topbar {
     gap: 4px;
     padding-left: max(6px, var(--safe-left));
@@ -1027,9 +1080,9 @@ button { font-family: inherit; }
     --dock-avatar: 44px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
-    --human-tile-w: clamp(48px, 12vw, 54px);
+    --human-tile-w: clamp(50px, 12.6vw, 56px);
     --human-tile-h: calc(var(--human-tile-w) * 1.375);
-    --mini-w: clamp(20px, 5.4vw, 26px);
+    --mini-w: clamp(21px, 5.6vw, 27px);
     --mini-h: calc(var(--mini-w) * 1.375);
   }
   .tile-wall {

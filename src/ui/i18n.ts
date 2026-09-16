@@ -69,12 +69,12 @@ const dict = {
   needMoney: { zh: "钱不够啦", en: "Need more cash" },
   forBoth: { zh: "给你俩！", en: "for both of you!" },
   hint: {
-    zh: "吃上家 · 碰杠胡任意家 · 暗杠不算开门 · 胡牌需开门/有刻或中发白将/幺九/三门齐",
-    en: "Chow only from left · pung/kong/win from anyone · concealed kong does not open · win needs open / pung or dragon eyes / terminal / 3 suits",
+    zh: "吃上家 · 碰杠胡任意家 · 可立胡 · 胡牌需有刻或中发白将/幺九/三门齐 · 长春滚番结算",
+    en: "Chow only from left · pung/kong/win from anyone · closed 立胡 OK · win needs pung or dragon eyes / terminal / 3 suits · Changchun rolling fan",
   },
   dealing: { zh: "发牌中…", en: "Dealing…" },
-  paySelf: { zh: "自摸：三家各付赌注", en: "Self-draw: each of three pays the stake" },
-  payDiscard: { zh: "点炮：放炮者付赌注", en: "Discard win: discarder pays the stake" },
+  paySelf: { zh: "自摸：三家按滚番各付", en: "Self-draw: each of three pays rolling fan" },
+  payDiscard: { zh: "点炮：三家都付（放炮者多1番）", en: "Discard win: all three pay (discarder +1 fan)" },
   noCashMoved: { zh: "无现金变动（破产或 $0 赌注）", en: "no cash moved (broke or $0 bet)" },
   seatYou: { zh: "A", en: "A" },
   seatOpp: { zh: "J", en: "J" },
@@ -97,6 +97,10 @@ const dict = {
   more: { zh: "更多", en: "More" },
   fanUnit: { zh: "番", en: "fan" },
   stakeAmount: { zh: "赌注", en: "Stake" },
+  rollingFan: { zh: "滚番", en: "Rolling fan" },
+  eggMoney: { zh: "蛋钱", en: "Egg money" },
+  beats: { zh: "击败", en: "Beats" },
+  fangPao: { zh: "放炮 +1", en: "Discarder +1" },
 } as const;
 
 export type I18nKey = keyof typeof dict;
