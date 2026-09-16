@@ -382,7 +382,17 @@ button { font-family: inherit; }
   position: relative;
   z-index: 4;
 }
-.pos-left, .pos-right { justify-content: center; }
+.pos-left, .pos-right {
+  justify-content: flex-start;
+  align-items: center;
+  /* Room for pinned avatar so tile stacks grow without shoving it */
+  padding-top: 58px;
+}
+.pos-top {
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 56px;
+}
 /* ===== Avatars ===== */
 .avatar-wrap {
   display: flex;
@@ -394,6 +404,25 @@ button { font-family: inherit; }
 .pos-bottom .avatar-wrap { flex-direction: row; justify-content: center; margin-top: 4px; }
 .pos-left .avatar-wrap { flex-direction: column; align-items: center; }
 .pos-right .avatar-wrap { flex-direction: column; align-items: center; }
+/* Pin L / C / J avatars in the seat cell — hand length must not move them */
+.pos-left .avatar-wrap,
+.pos-right .avatar-wrap,
+.pos-top .avatar-wrap {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  margin: 0;
+  pointer-events: auto;
+}
+.pos-left .backs,
+.pos-right .backs,
+.pos-top .backs {
+  /* Grow from a stable top edge under the avatar */
+  align-content: flex-start;
+  justify-content: flex-start;
+}
 .avatar-ring {
   width: 48px;
   height: 48px;
@@ -1126,8 +1155,12 @@ button { font-family: inherit; }
   .pos-bottom { gap: 8px; padding-bottom: 4px; }
   .pos-left, .pos-right {
     overflow: visible;
+    padding-top: 50px;
   }
-  .pos-left .avatar-wrap, .pos-right .avatar-wrap {
+  .pos-top {
+    padding-top: 48px;
+  }
+  .pos-left .avatar-wrap, .pos-right .avatar-wrap, .pos-top .avatar-wrap {
     flex-shrink: 0;
   }
 
