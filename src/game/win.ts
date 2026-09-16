@@ -1,5 +1,6 @@
 import type { DongbeiFlags, FanLine, Meld, Tile, Wind, WinResult } from "./types";
 import { isHonor, isSuited, parseKind } from "./tiles";
+import { getRules } from "./rules";
 
 type MeldsNeed = { type: "chow" | "pung"; kinds: string[] };
 
@@ -113,12 +114,14 @@ export function dongbeiFlags(concealed: Tile[], exposed: Meld[], pattern: Patter
   return { opened, hasKe, dragonEyes, yaojiu, threeSuits };
 }
 
-/** Changchun: closed wins (立胡) allowed; keep 刻/将 · 幺九 · 三门齐. */
+/** Changchun-style legality; toggles from table rules. */
 export function dongbeiLegal(concealed: Tile[], exposed: Meld[], pattern: Pattern): boolean {
   const f = dongbeiFlags(concealed, exposed, pattern);
-  if (!f.hasKe && !f.dragonEyes) return false;
-  if (!f.yaojiu) return false;
-  if (!f.threeSuits) return false;
+  const rules = getRules();
+  if (!rules.allowLiHu && !f.opened) return false;
+  if (rules.requireKeOrDragonEyes && !f.hasKe && !f.dragonEyes) return false;
+  if (rules.requireYaojiu && !f.yaojiu) return false;
+  if (rules.requireThreeSuits && !f.threeSuits) return false;
   return true;
 }
 

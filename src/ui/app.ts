@@ -287,7 +287,7 @@ function playerAvatarSrc(): string {
   return getAFace() === "camera" ? "avatars/player-face.png?v=face7" : "avatars/player.png?v=a1";
 }
 
-const HOLD_POSE_V = "hold4";
+const HOLD_POSE_V = "hold5";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
   const face = getAFace() === "camera";
@@ -579,10 +579,11 @@ function overlay(): string {
   if (shopOpen) return shopOverlay();
   if (state.phase === "bet") {
     const cash = state.players[0]!.cash;
+    // Fixed chips only — never offer "bet all wallet".
     const presets = [0, 1, 5, 10, 20, 50].filter((n) => n <= cash);
-    if (cash > 0 && !presets.includes(cash) && cash < 1000) presets.push(cash);
     if (!presets.includes(0)) presets.unshift(0);
-    const clamped = Math.max(0, Math.min(betDraft, cash));
+    const maxChip = presets[presets.length - 1] ?? 0;
+    const clamped = presets.includes(betDraft) ? betDraft : Math.min(betDraft, maxChip);
     const chips = presets
       .map(
         (n) =>
@@ -645,22 +646,46 @@ function overlay(): string {
   </div></div>`;
 }
 
+function patchHandSelection(): void {
+  const row = root.querySelector('.hand-row');
+  if (!row) return;
+  row.querySelectorAll<HTMLElement>('.tile.hand-tile[data-act="select"]').forEach((btn) => {
+    const id = Number(btn.dataset.id);
+    btn.classList.toggle('selected', selected !== null && id === selected);
+  });
+}
+
 function humanHandHtml(): string {
   const hand = state.players[0]!.hand;
   const n = visibleHandCount(0);
-  const shown = hand.slice(0, n);
+  let shown = hand.slice(0, n);
+  const drawId = state.lastDraw?.id;
+  const keepDrawnRight =
+    !dealReveal &&
+    drawId != null &&
+    shown.some((t) => t.id === drawId) &&
+    (state.phase === "discard" || state.phase === "claim" || state.phase === "draw");
+  if (keepDrawnRight) {
+    const rest = shown.filter((t) => t.id !== drawId);
+    const drawn = shown.find((t) => t.id === drawId)!;
+    shown = [...rest, drawn];
+  }
   const arrivingId = flyDraw && flyDraw.seat === 0 && flyDraw.tile ? flyDraw.tile.id : -1;
   const tipId = tipDiscardId();
   return shown
-    .map((tile) =>
-      tileEl(tile, {
+    .map((tile) => {
+      const isDrawn = tile.id === drawId && !dealReveal;
+      const gap = keepDrawnRight && isDrawn && shown.length > 1 ? " drawn-gap" : "";
+      const el = tileEl(tile, {
         size: "hand",
         selected: tile.id === selected,
-        drawn: tile.id === state.lastDraw?.id && !dealReveal,
+        drawn: isDrawn,
         arriving: tile.id === arrivingId,
         tip: tipId !== null && tile.id === tipId,
-      }),
-    )
+      });
+      // Inject gap class on the drawn tile button
+      return gap ? el.replace('class="', 'class="drawn-gap ') : el;
+    })
     .join("");
 }
 
@@ -1274,7 +1299,8 @@ function onClick(ev: Event): void {
     selected = selected === id ? null : id;
     sfx.click();
     scheduleSave();
-    render();
+    // Patch only the hand selection class — full render remounts rivers/opponents and makes them jump.
+    patchHandSelection();
     return;
   }
   if (act === "sort") {

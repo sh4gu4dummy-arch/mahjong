@@ -14,6 +14,7 @@ import {
 import { addedKongTiles, bestClaim, claimsForPlayer, concealedKongKinds, humanClaimRelevant } from "./claims";
 import { chooseDiscard, pickAiClaim, aiShouldConcealedKong } from "./ai";
 import { isWinningHand, rollingPayout, toWinResult } from "./win";
+import { getRules, payoutForFan } from "./rules";
 
 const NAMES: { en: string; zh: string }[] = [
   { en: "A", zh: "A" },
@@ -183,10 +184,7 @@ export function refillBrokeAi(state: GameState): string[] {
 }
 
 /**
- * Changchun 滚番 settle:
- * payout = stake * 2^(fan-1)
- * 自摸: all three pay shared fan (incl. 自摸).
- * 点炮: all three pay; discarder +1 放炮 on their fan only.
+ * Settle using active table rules (滚番/平番, 点炮三家付/一家付).
  */
 function settle(state: GameState): void {
   const w = state.winResult;
@@ -197,13 +195,19 @@ function settle(state: GameState): void {
     w.payouts = [];
     return;
   }
+  const rules = getRules();
   const payouts: Payout[] = [];
   const baseFan = Math.max(1, w.fan);
-  for (let i = 0; i < 4; i++) {
-    if (i === w.winner) continue;
+  const payers: number[] = [];
+  if (!w.selfDraw && rules.payDiscard === "discarderOnly" && w.loser != null) {
+    payers.push(w.loser);
+  } else {
+    for (let i = 0; i < 4; i++) if (i !== w.winner) payers.push(i);
+  }
+  for (const i of payers) {
     let fan = baseFan;
-    if (!w.selfDraw && w.loser === i) fan = baseFan + 1; // 放炮
-    const due = rollingPayout(stake, fan);
+    if (!w.selfDraw && w.loser === i && rules.payDiscard === "allThree") fan = baseFan + 1; // 放炮
+    const due = payoutForFan(stake, fan, rules);
     const amt = pay(state, i, w.winner, due);
     if (amt > 0) payouts.push({ from: i, to: w.winner, amount: amt, fan });
   }
@@ -214,6 +218,7 @@ function settle(state: GameState): void {
 type EggMode = "open" | "added" | "concealed";
 
 function settleEgg(state: GameState, konger: number, mode: EggMode, discarder?: number): Payout[] {
+  if (!getRules().eggMoney) return [];
   const stake = state.stake;
   if (stake <= 0) return [];
   const payouts: Payout[] = [];

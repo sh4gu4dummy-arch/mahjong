@@ -982,8 +982,9 @@ button { font-family: inherit; }
   align-items: flex-end;
   gap: 2px;
   flex-wrap: nowrap;
-  min-height: calc(var(--human-tile-h) + 8px);
-  padding: 2px 4px 1px;
+  /* padding-top keeps selected/tip lift + tip badge fully visible (overflow-x clips y) */
+  min-height: calc(var(--human-tile-h) + 22px);
+  padding: 18px 4px 1px;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
@@ -991,6 +992,9 @@ button { font-family: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   touch-action: pan-x;
+}
+.hand-row .tile.hand-tile.drawn-gap {
+  margin-left: 10px;
 }
 .hand-row::-webkit-scrollbar { display: none; }
 .actions {
@@ -1317,8 +1321,9 @@ button { font-family: inherit; }
     padding-bottom: max(6px, var(--safe-bottom));
   }
   .hand-row {
-    padding: 4px 2px 6px;
+    padding: 18px 2px 6px;
     margin-bottom: 2px;
+    min-height: calc(var(--human-tile-h) + 24px);
     /* Fit a full 14-tile hand on ~360–390 CSS px (S25) without horizontal scroll */
     --hand-fit-n: 14;
     --hand-fit-gap: 1px;
@@ -1330,6 +1335,9 @@ button { font-family: inherit; }
     gap: var(--hand-fit-gap);
     justify-content: center;
     overflow-x: hidden; /* must fit; no clipped mystery hand */
+  }
+  .hand-row .tile.hand-tile.drawn-gap {
+    margin-left: 8px;
   }
   .hand-row .tile.hand-tile {
     --w: var(--human-tile-w);
