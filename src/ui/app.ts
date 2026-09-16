@@ -530,10 +530,10 @@ function shopOverlay(): string {
       <img class="shop-item-img" src="${item.src}" alt="${itemAlt}" draggable="false" />
       <div class="shop-item-info">
         <strong>${label}</strong>
-        <span>$${item.price} · ${t("shopBoth")}</span>
+        <span>$${item.price}</span>
       </div>
       <button class="btn shop-buy" data-act="buy-prop" data-item="${item.id}" ${can ? "" : "disabled"}>
-        ${t("buy")} · $${item.price}
+        ${t("buy")}
       </button>
     </div>`;
   }).join("");
@@ -545,13 +545,11 @@ function shopOverlay(): string {
           <img class="shop-full" src="${playerFullSrc(seatProp[0]?.id)}" alt="${t("seatYou")}" draggable="false" />
           ${faceFlipBtn("shop")}
         </div>
-        <span class="shop-char-label">${t("seatYou")}</span>
       </div>
       <div class="shop-char-full opp">
         <div class="shop-char-body">
           <img class="shop-full" src="${oppositeFullSrc(seatProp[2]?.id)}" alt="${t("seatOpp")}" draggable="false" />
         </div>
-        <span class="shop-char-label">${t("seatOpp")}</span>
       </div>
     </div>
     <aside class="shop-panel">
