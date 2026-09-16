@@ -1094,7 +1094,7 @@ button { font-family: inherit; }
 /* Phone + short phone: keep everything inside the viewport */
 @media (max-width: 719px) {
   :root {
-    --dock-avatar: 46px;
+    --dock-avatar: 88px;
     --mini-w: clamp(22px, 5.8vw, 28px);
     --mini-h: calc(var(--mini-w) * 1.375);
     --human-tile-w: clamp(54px, 13.8vw, 60px);
@@ -1174,7 +1174,7 @@ button { font-family: inherit; }
   .chow-preview { gap: 2px; padding-left: 5px; padding-right: 5px; }
   .tips-toggle, .pace-toggle { max-width: none; flex-shrink: 0; }
   .act.tips-act, .act.auto-act { padding: 4px 6px; font-size: 9px; }
-  /* Dock: hand / controls / tips as distinct bands */
+  /* Dock: big A avatar bottom-right; cash/actions use the left space */
   .dock {
     padding-top: 6px;
     padding-left: max(8px, var(--safe-left));
@@ -1186,14 +1186,36 @@ button { font-family: inherit; }
     margin-bottom: 2px;
   }
   .dock-bar {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "cash avatar"
+      "actions avatar"
+      "tips tips";
+    align-items: end;
+    column-gap: 10px;
+    row-gap: 6px;
     padding-top: 6px;
     border-top: 1px solid rgba(107, 74, 34, 0.55);
   }
+  .dock-bar .cash-pill-wrap {
+    grid-area: cash;
+    justify-self: start;
+    align-self: end;
+  }
+  .dock-bar .avatar-wrap {
+    grid-area: avatar;
+    justify-self: end;
+    align-self: end;
+    margin: 0;
+  }
+  .dock-bar .avatar-ring {
+    width: var(--dock-avatar);
+    height: var(--dock-avatar);
+  }
   .dock-bar .actions {
-    flex: 1 1 100%;
+    grid-area: actions;
+    flex: none;
     width: 100%;
     max-width: 100%;
     flex-wrap: wrap;
@@ -1202,8 +1224,9 @@ button { font-family: inherit; }
     overflow-x: visible;
   }
   .dock-bar .dock-tips {
-    flex: 1 1 100%;
-    order: 5;
+    grid-area: tips;
+    flex: none;
+    width: 100%;
     margin-top: 2px;
     padding-top: 6px;
     border-top: 1px solid rgba(107, 74, 34, 0.4);
@@ -1221,7 +1244,7 @@ button { font-family: inherit; }
 
 @media (max-height: 700px) and (max-width: 719px) {
   :root {
-    --dock-avatar: 42px;
+    --dock-avatar: 76px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
     --human-tile-w: clamp(52px, 13vw, 58px);
