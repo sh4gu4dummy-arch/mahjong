@@ -15,18 +15,30 @@ function registerAssetCache(): void {
 }
 
 function warmImages(): void {
+  const hold = "hold4";
   const urls = [
     "avatars/player.png?v=a1",
+    "avatars/player-face.png?v=face7",
     "avatars/right.png?v=l1",
     "avatars/opposite.png?v=j2",
     "avatars/left.png?v=c2",
     "tiles/Back.png?v=png2",
-    "chars/player-full.png?v=cut2",
-    "chars/opposite-full.png?v=cut2",
-    "bg/park.png",
+    "bg/park.png?v=park2",
     "props/coffee.png?v=cut3",
     "props/beer.png?v=cut3",
     "props/cigarette.png?v=cut3",
+    `chars/player-full.png?v=cut3`,
+    `chars/player-face.png?v=${hold}`,
+    `chars/player-hold-beer.png?v=${hold}`,
+    `chars/player-hold-coffee.png?v=${hold}`,
+    `chars/player-hold-cigarette.png?v=${hold}`,
+    `chars/player-hold-beer-face.png?v=${hold}`,
+    `chars/player-hold-coffee-face.png?v=${hold}`,
+    `chars/player-hold-cigarette-face.png?v=${hold}`,
+    `chars/opposite-full.png?v=cut3`,
+    `chars/opposite-hold-beer.png?v=${hold}`,
+    `chars/opposite-hold-coffee.png?v=${hold}`,
+    `chars/opposite-hold-cigarette.png?v=${hold}`,
   ];
   for (const u of urls) {
     const img = new Image();

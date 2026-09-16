@@ -714,6 +714,82 @@ function tipsToggle(): string {
   </div>`;
 }
 
+
+/** Update Date shop without remounting park sprites (avoids flicker / re-decode). */
+function patchShopUi(mute: string): boolean {
+  const scene = root.querySelector(".shop-scene");
+  const top = root.querySelector(".shop-topbar");
+  if (!scene || !top) return false;
+
+  const cash = formatCash(state.players[0]!.cash);
+  root.querySelectorAll(".shop-cash").forEach((el) => {
+    el.textContent = cash;
+  });
+  root.querySelectorAll(".shop-topbar .cash-pill b").forEach((el) => {
+    el.textContent = cash;
+  });
+  root.querySelectorAll(".shop-topbar .cash-pill-wrap").forEach((wrap) => {
+    const pill = wrap.querySelector(".cash-pill");
+    if (!pill) return;
+    let flo = wrap.querySelector(".cash-float");
+    if (cashFloat) {
+      if (!flo) {
+        flo = document.createElement("span");
+        flo.className = "cash-float";
+        flo.setAttribute("aria-hidden", "true");
+        wrap.appendChild(flo);
+      }
+      flo.setAttribute("data-k", String(cashFloat.key));
+      flo.textContent = cashFloat.text;
+    } else if (flo) {
+      flo.remove();
+    }
+  });
+
+  const youSrc = playerFullSrc(seatProp[0]?.id);
+  const oppSrc = oppositeFullSrc(seatProp[2]?.id);
+  const youImg = scene.querySelector<HTMLImageElement>(".shop-char-full.you .shop-full");
+  const oppImg = scene.querySelector<HTMLImageElement>(".shop-char-full.opp .shop-full");
+  if (youImg && youImg.getAttribute("src") !== youSrc) youImg.src = youSrc;
+  if (oppImg && oppImg.getAttribute("src") !== oppSrc) oppImg.src = oppSrc;
+
+  const flip = scene.querySelector<HTMLButtonElement>(".shop-face-flip");
+  if (flip) {
+    const face = getAFace();
+    const next = face === "camera" ? "away" : "camera";
+    const label = face === "camera" ? t("faceCamera") : t("faceAway");
+    flip.dataset.face = next;
+    flip.setAttribute("aria-label", `${t("faceAria")}: ${label}`);
+    flip.title = t("faceAria");
+  }
+
+  const wallet = state.players[0]!.cash;
+  scene.querySelectorAll<HTMLButtonElement>(".shop-buy").forEach((btn) => {
+    const id = btn.dataset.item as ShopPropId | undefined;
+    const item = SHOP_ITEMS.find((x) => x.id === id);
+    btn.disabled = !(item && wallet >= item.price);
+  });
+
+  let flashEl = scene.querySelector<HTMLElement>(".shop-flash");
+  if (shopFlash) {
+    if (!flashEl) {
+      flashEl = document.createElement("p");
+      flashEl.className = "shop-flash";
+      const catalog = scene.querySelector(".shop-catalog");
+      catalog?.insertAdjacentElement("afterend", flashEl);
+    }
+    flashEl.textContent = shopFlash;
+  } else if (flashEl) {
+    flashEl.remove();
+  }
+
+  // mute label in overflow if present
+  top.querySelectorAll("[data-act='mute']").forEach((el) => {
+    el.textContent = mute;
+  });
+  return true;
+}
+
 export function render(): void {
   syncCashFloat();
   consumeBeats();
@@ -723,7 +799,8 @@ export function render(): void {
 
   // Full-screen park shop — hide the entire mahjong board while open.
   if (shopOpen) {
-    root.innerHTML = `
+    if (!patchShopUi(mute)) {
+      root.innerHTML = `
       <header class="topbar shop-topbar">
         <div class="brand"><h1>${t("brand")}</h1><span class="app-ver">v${APP_VERSION}</span></div>
         <div class="topbar-main">
@@ -742,6 +819,7 @@ export function render(): void {
       </header>
       ${shopOverlay()}
     `;
+    }
     clearAutoTimer();
     return;
   }
