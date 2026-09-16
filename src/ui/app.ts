@@ -1186,6 +1186,10 @@ export function start(el: HTMLElement): void {
     state = saved.state;
     betDraft = saved.betDraft;
     selected = saved.selected;
+    // Drop stale selection if that tile is no longer in hand.
+    if (selected !== null && !state.players[0]!.hand.some((t) => t.id === selected)) {
+      selected = null;
+    }
     shopOpen = false;
     dealReveal = null;
     flyDraw = null;

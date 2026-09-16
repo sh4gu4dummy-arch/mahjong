@@ -51,6 +51,8 @@ function isGameState(x: unknown): x is GameState {
   if (typeof s.drawGame !== "boolean") return false;
   if (typeof s.turnCount !== "number") return false;
   if (!Array.isArray(s.pendingHumanClaims)) return false;
+  // pendingAiClaims optional for older saves — normalized in loadSave
+  if (s.pendingAiClaims !== undefined && !Array.isArray(s.pendingAiClaims)) return false;
   if (typeof s.message !== "string" || typeof s.messageZh !== "string") return false;
   if (typeof s.stake !== "number" || typeof s.handNumber !== "number") return false;
   return true;
@@ -70,7 +72,9 @@ export function loadSave(): SavePayload | null {
       obj.selected === null || typeof obj.selected === "number" ? (obj.selected as number | null) : null;
     // Normalize: ensure human is seat 0
     if (!obj.state.players[0]?.isHuman) return null;
-    return { v: SAVE_VERSION, state: obj.state, betDraft, selected };
+    const state = obj.state as GameState;
+    if (!Array.isArray(state.pendingAiClaims)) state.pendingAiClaims = [];
+    return { v: SAVE_VERSION, state, betDraft, selected };
   } catch {
     return null;
   }

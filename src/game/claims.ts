@@ -87,10 +87,9 @@ export function bestClaim(claims: Claim[], discarder: number): Claim | null {
   return top[0] ?? null;
 }
 
-/** True if the human's claim could actually win the priority fight. */
-export function humanClaimRelevant(human: Claim[], others: Claim[]): boolean {
+/** True if a human claim would win rank+distance priority vs frozen AI intents. */
+export function humanClaimRelevant(human: Claim[], others: Claim[], discarder: number): boolean {
   if (!human.length) return false;
-  const bestOther = others.length ? Math.max(...others.map((c) => RANK[c.type] ?? 0)) : 0;
-  const bestHuman = Math.max(...human.map((c) => RANK[c.type] ?? 0));
-  return bestHuman >= bestOther;
+  const best = bestClaim([...human, ...others], discarder);
+  return best !== null && best.player === 0;
 }

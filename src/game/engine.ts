@@ -57,6 +57,7 @@ export function createTable(cash: number[] = [START_CASH, START_CASH, START_CASH
     drawGame: false,
     turnCount: 0,
     pendingHumanClaims: [],
+    pendingAiClaims: [],
     message: "Choose a stake for this hand.",
     messageZh: "请选择本局赌注。",
     stake: 0,
@@ -101,6 +102,7 @@ export function beginRound(state: GameState, requestedStake: number): void {
   state.drawGame = false;
   state.turnCount = 0;
   state.pendingHumanClaims = [];
+  state.pendingAiClaims = [];
   state.stake = stake;
   state.message = stake
     ? `Stake $${stake}. Your deal — discard a tile.`
@@ -209,8 +211,10 @@ export function applyDiscard(state: GameState, tileId: number): { needClaim: boo
       else if (c.type !== "chow") aiWanted.push(pick);
     }
   }
+  // Freeze AI intents at discard so human 过 does not re-roll pickAiClaim.
+  state.pendingAiClaims = aiWanted;
 
-  if (humanClaimRelevant(human, aiWanted)) {
+  if (humanClaimRelevant(human, aiWanted, discarder)) {
     state.phase = "claim";
     state.pendingHumanClaims = human;
     state.message = `${p.name} discarded ${tileName(tile)}. Claim?`;
@@ -230,14 +234,10 @@ export function applyDiscard(state: GameState, tileId: number): { needClaim: boo
 
 export function humanPass(state: GameState): void {
   if (state.phase !== "claim" || !state.lastDiscard || state.lastDiscarder === null) return;
-  const tile = state.lastDiscard;
   const discarder = state.lastDiscarder;
   const next = nextSeat(discarder);
-  const aiWanted: Claim[] = [];
-  for (let i = 1; i < 4; i++) {
-    const pick = pickAiClaim(state.players[i]!, i, tile, i === next);
-    if (pick) aiWanted.push(pick);
-  }
+  // Use intents frozen at discard — do not re-roll pickAiClaim.
+  const aiWanted = state.pendingAiClaims;
   state.pendingHumanClaims = [];
   const chosen = bestClaim(aiWanted, discarder);
   if (chosen) resolveClaim(state, chosen);
@@ -245,8 +245,13 @@ export function humanPass(state: GameState): void {
 }
 
 export function humanClaim(state: GameState, claim: Claim): void {
-  if (state.phase !== "claim") return;
-  resolveClaim(state, claim);
+  if (state.phase !== "claim" || state.lastDiscarder === null) return;
+  if (claim.player !== 0) return;
+  const discarder = state.lastDiscarder;
+  // Closer equal-rank AI beats human — only apply when human wins bestClaim.
+  const chosen = bestClaim([claim, ...state.pendingAiClaims], discarder);
+  if (!chosen) return;
+  resolveClaim(state, chosen);
 }
 
 function takeDiscardFromRiver(state: GameState): Tile {
@@ -258,7 +263,6 @@ function takeDiscardFromRiver(state: GameState): Tile {
 }
 
 function resolveClaim(state: GameState, claim: Claim): void {
-  state.pendingHumanClaims = [];
   const p = state.players[claim.player]!;
   const tile = state.lastDiscard!;
   const discarder = state.lastDiscarder!;
@@ -266,10 +270,15 @@ function resolveClaim(state: GameState, claim: Claim): void {
   if (claim.type === "win") {
     const hand = [...p.hand, tile];
     const res = toWinResult(claim.player, discarder, false, hand, p.melds, p.seat, state.roundWind);
+    // Guard: never end the hand with a null winResult.
+    if (!res) return;
+    state.pendingHumanClaims = [];
+    state.pendingAiClaims = [];
+    takeDiscardFromRiver(state);
     state.phase = "over";
     state.winner = claim.player;
     state.winResult = res;
-    if (res) settle(state);
+    settle(state);
     const who = claim.player === 0 ? "You win" : `${p.name} wins`;
     const zh = claim.player === 0 ? "你胡了" : `${p.nameZh} 胡牌`;
     state.message = `${who}! 点炮 · stake $${state.stake}.`;
@@ -277,6 +286,8 @@ function resolveClaim(state: GameState, claim: Claim): void {
     return;
   }
 
+  state.pendingHumanClaims = [];
+  state.pendingAiClaims = [];
   const claimed = takeDiscardFromRiver(state);
 
   if (claim.type === "pung") {
@@ -354,6 +365,7 @@ function afterKong(state: GameState, player: number): void {
 function advanceToDraw(state: GameState, who: number): void {
   state.current = who;
   state.pendingHumanClaims = [];
+  state.pendingAiClaims = [];
   if (!state.wall.length) {
     finishDrawGame(state);
     return;
@@ -385,10 +397,13 @@ export function declareSelfWin(state: GameState, player: number): boolean {
   const p = state.players[player]!;
   if (!isWinningHand(p.hand, p.melds)) return false;
   const res = toWinResult(player, null, true, p.hand, p.melds, p.seat, state.roundWind);
+  if (!res) return false;
+  state.pendingHumanClaims = [];
+  state.pendingAiClaims = [];
   state.phase = "over";
   state.winner = player;
   state.winResult = res;
-  if (res) settle(state);
+  settle(state);
   const who = player === 0 ? "You win by self-draw" : `${p.name} wins by self-draw`;
   const zh = player === 0 ? "你自摸" : `${p.nameZh} 自摸`;
   state.message = `${who}! Each other seat pays $${state.stake}.`;

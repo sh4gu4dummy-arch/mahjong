@@ -89,6 +89,7 @@ export interface GameState {
   drawGame: boolean;
   turnCount: number;
   pendingHumanClaims: Claim[];
+  pendingAiClaims: Claim[];
   message: string;
   messageZh: string;
   stake: number;
