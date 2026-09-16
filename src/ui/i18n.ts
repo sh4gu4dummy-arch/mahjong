@@ -31,6 +31,7 @@ const dict = {
     zh: "你是 $0 — 继续打为面子。赢了再攒钱。",
     en: "You are at $0 — play on for pride. Win to rebuild the stack.",
   },
+  refuelCash: { zh: "没钱了？恢复到 $10", en: "Out of cash? Top up to $10" },
   payNote: { zh: "", en: "" },
   rulesMini: {
     zh: "",

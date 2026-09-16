@@ -468,7 +468,11 @@ function overlay(): string {
           `<button class="bet-chip ${clamped === n ? "on" : ""}" data-act="bet-set" data-n="${n}">$${n}</button>`,
       )
       .join("");
-    const zeroNote = cash === 0 ? `<p class="sub">${t("prideNote")}</p>` : "";
+    const zeroNote =
+      cash === 0
+        ? `<p class="sub">${t("prideNote")}</p>
+      <button class="btn" data-act="refuel" type="button">${t("refuelCash")}</button>`
+        : "";
     return `<div class="overlay"><div class="modal">
       <div class="modal-hero"><img class="avatar hero" src="${playerAvatarSrc()}" alt="${t("you")}" /></div>
       <h2>${t("brand")}</h2>
@@ -898,6 +902,15 @@ function goNext(): void {
   render();
 }
 
+function goRefuel(): void {
+  // Broke top-up: $10 only (new games still start at $100 via Reset).
+  state.players[0]!.cash = 10;
+  betDraft = 10;
+  sfx.click();
+  saveNow();
+  render();
+}
+
 function goReset(): void {
   gen += 1;
   clearAutoTimer();
@@ -995,6 +1008,10 @@ function onClick(ev: Event): void {
   if (act === "buy-prop") {
     const id = el.dataset.item as ShopPropId;
     if (id === "coffee" || id === "cigarette" || id === "beer") buyProp(id);
+    return;
+  }
+  if (act === "refuel") {
+    goRefuel();
     return;
   }
   if (act === "reset") {
