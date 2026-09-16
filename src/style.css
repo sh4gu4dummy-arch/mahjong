@@ -1813,22 +1813,35 @@ button { font-family: inherit; }
   .shop-cash { font-size: 11px; }
   .shop-char-full {
     gap: 0;
-    max-width: min(150px, 40vw);
     max-height: none;
     height: auto;
     align-self: flex-end;
   }
-  .shop-char-full.you .shop-char-body,
-  .shop-char-full.opp .shop-char-body {
-    width: min(138px, 36vw);
+  .shop-char-full.you { max-width: min(120px, 32vw); }
+  .shop-char-full.opp { max-width: min(155px, 42vw); }
+  /* A clearly shorter than J; feet stay aligned (flex-end). */
+  .shop-char-full.you .shop-char-body {
+    width: min(118px, 30vw);
     max-height: none;
     height: auto;
   }
-  .shop-char-full.you .shop-full,
-  .shop-char-full.opp .shop-full {
-    width: min(138px, 36vw);
+  .shop-char-full.opp .shop-char-body {
+    width: min(150px, 40vw);
+    max-height: none;
     height: auto;
-    max-height: min(52vh, 360px);
+  }
+  .shop-char-full.you .shop-full {
+    width: min(118px, 30vw);
+    height: auto;
+    max-height: min(42vh, 300px);
+    object-fit: contain;
+    object-position: bottom center;
+    image-rendering: auto;
+  }
+  .shop-char-full.opp .shop-full {
+    width: min(150px, 40vw);
+    height: auto;
+    max-height: min(54vh, 380px);
     object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;

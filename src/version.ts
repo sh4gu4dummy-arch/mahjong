@@ -1,2 +1,2 @@
 /** Single app version — keep in sync with package.json, VERSION, public/sw.js CACHE. */
-export const APP_VERSION = "1.4.22";
+export const APP_VERSION = "1.4.23";
