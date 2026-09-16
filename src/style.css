@@ -889,14 +889,24 @@ button { font-family: inherit; }
   cursor: pointer;
 }
 .tile.hand-tile:hover { transform: translateY(-6px); }
+/* Just-drawn: gold (not tip-blue). Position gap on the right is the main cue. */
 .tile.hand-tile.drawn {
   box-shadow:
-    0 0 0 2px #7ec8ff,
+    0 0 0 2px var(--gold, #e7c36a),
     0 1.5px 0 rgba(255,255,255,.85) inset,
     0 0 0 1px #c4b48a,
     2px 4px 0 #7a6848,
     3px 6px 12px rgba(0,0,0,.42);
   animation: draw-pop 0.32s ease-out;
+}
+.tile.hand-tile.drawn.selected {
+  box-shadow:
+    0 0 0 2px var(--gold, #e7c36a),
+    0 1.5px 0 rgba(255,255,255,.85) inset,
+    0 0 0 1px #c4b48a,
+    1px 1px 0 #a89468,
+    2px 10px 0 #7a6848,
+    3px 14px 18px rgba(0,0,0,.5);
 }
 .tile.hand-tile.arriving,
 .tile.arriving {
