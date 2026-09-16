@@ -18,8 +18,8 @@
   --tile-w: clamp(36px, 9.5vw, 44px);
   --tile-h: calc(var(--tile-w) * 1.375);
   /* A's hand: larger than opponents for readability. */
-  --human-tile-w: clamp(52px, 13.2vw, 60px);
-  --human-tile-h: calc(var(--human-tile-w) * 1.375);
+  --human-tile-w: clamp(54px, 13.8vw, 62px);
+  --human-tile-h: calc(var(--human-tile-w) * 1.22);
   /* L/J/C backs, rivers, melds — small enough to avoid side clipping. */
   --mini-w: clamp(24px, 6.4vw, 30px);
   --mini-h: calc(var(--mini-w) * 1.375);
@@ -402,7 +402,7 @@ button { font-family: inherit; }
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  object-position: center 22%;
+  object-position: center 35%;
   display: block;
   background: #1a120c;
   border: 2px solid #2a1a0c;
@@ -1084,8 +1084,8 @@ button { font-family: inherit; }
     --dock-avatar: 48px;
     --mini-w: clamp(23px, 6vw, 29px);
     --mini-h: calc(var(--mini-w) * 1.375);
-    --human-tile-w: clamp(52px, 13.4vw, 58px);
-    --human-tile-h: calc(var(--human-tile-w) * 1.375);
+    --human-tile-w: clamp(54px, 13.8vw, 60px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.22);
   }
   .brand h1 { font-size: 12px; max-width: 28vw; }
   .app-ver { font-size: 9px; }
@@ -1180,8 +1180,8 @@ button { font-family: inherit; }
     --dock-avatar: 44px;
     --tile-w: clamp(32px, 8.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.375);
-    --human-tile-w: clamp(50px, 12.6vw, 56px);
-    --human-tile-h: calc(var(--human-tile-w) * 1.375);
+    --human-tile-w: clamp(52px, 13vw, 58px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.22);
     --mini-w: clamp(21px, 5.6vw, 27px);
     --mini-h: calc(var(--mini-w) * 1.375);
   }
@@ -1197,8 +1197,8 @@ button { font-family: inherit; }
     --dock-avatar: 56px;
     --tile-w: 52px;
     --tile-h: 72px;
-    --human-tile-w: 64px;
-    --human-tile-h: 88px;
+    --human-tile-w: 66px;
+    --human-tile-h: 80px;
     --mini-w: 36px;
     --mini-h: 50px;
     --wall-tile-w: 18px;
@@ -1237,8 +1237,8 @@ button { font-family: inherit; }
     --dock-avatar: 64px;
     --tile-w: 56px;
     --tile-h: 76px;
-    --human-tile-w: 70px;
-    --human-tile-h: 96px;
+    --human-tile-w: 72px;
+    --human-tile-h: 88px;
     --mini-w: 40px;
     --mini-h: 55px;
     --wall-tile-w: 20px;
@@ -2041,8 +2041,8 @@ button { font-family: inherit; }
     --dock-avatar: 40px;
     --tile-w: clamp(32px, 5.5vw, 40px);
     --tile-h: calc(var(--tile-w) * 1.35);
-    --human-tile-w: clamp(42px, 7vw, 50px);
-    --human-tile-h: calc(var(--human-tile-w) * 1.35);
+    --human-tile-w: clamp(46px, 7.5vw, 52px);
+    --human-tile-h: calc(var(--human-tile-w) * 1.22);
     --mini-w: clamp(18px, 3.8vw, 24px);
     --mini-h: calc(var(--mini-w) * 1.35);
   }
