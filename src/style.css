@@ -1955,8 +1955,8 @@ button { font-family: inherit; }
   user-select: none;
   pointer-events: none;
 }
-/* Petite girl vs taller opposite male — bottoms aligned */
-.shop-char-full.you .shop-full {
+/* Height by character identity (not seat role) — A petite, J tall, L/C medium */
+.shop-char-full[data-char="A"] .shop-full {
   /* ~J shoulder height when feet aligned */
   width: min(250px, 32vw);
   height: 62vh;
@@ -1964,18 +1964,30 @@ button { font-family: inherit; }
   object-fit: contain;
   object-position: bottom center;
 }
-.shop-char-full.opp .shop-full {
+.shop-char-full[data-char="J"] .shop-full {
   width: min(290px, 36vw);
   height: 72vh;
   max-height: 720px;
   object-fit: contain;
   object-position: bottom center;
 }
-.shop-char-full.you .shop-char-body {
+.shop-char-full[data-char="L"] .shop-full,
+.shop-char-full[data-char="C"] .shop-full {
+  width: min(260px, 33vw);
+  height: 66vh;
+  max-height: 660px;
+  object-fit: contain;
+  object-position: bottom center;
+}
+.shop-char-full[data-char="A"] .shop-char-body {
   width: min(250px, 32vw);
 }
-.shop-char-full.opp .shop-char-body {
+.shop-char-full[data-char="J"] .shop-char-body {
   width: min(290px, 36vw);
+}
+.shop-char-full[data-char="L"] .shop-char-body,
+.shop-char-full[data-char="C"] .shop-char-body {
+  width: min(260px, 33vw);
 }
 .shop-char-label { display: none !important; }
 .shop-char-body .hand-prop {
@@ -2003,13 +2015,13 @@ button { font-family: inherit; }
   height: 46px;
   bottom: 49%;
 }
-.shop-char-full.you .shop-char-body .hand-prop {
+.shop-char-full[data-char="A"] .shop-char-body .hand-prop {
   /* A is facing away — prop at right hand */
   right: 6%;
   left: auto;
   bottom: 46%;
 }
-.shop-char-full.opp .shop-char-body .hand-prop {
+.shop-char-full[data-char="J"] .shop-char-body .hand-prop {
   /* J facing us — prop near left hand (screen right of body center) */
   left: auto;
   right: 4%;
@@ -2136,20 +2148,28 @@ button { font-family: inherit; }
     height: auto;
     align-self: flex-end;
   }
-  .shop-char-full.you { max-width: min(148px, 40vw); }
-  .shop-char-full.opp { max-width: min(168px, 46vw); }
-  /* A ~ J shoulder height; feet aligned (flex-end). */
-  .shop-char-full.you .shop-char-body {
+  .shop-char-full[data-char="A"] { max-width: min(148px, 40vw); }
+  .shop-char-full[data-char="J"] { max-width: min(168px, 46vw); }
+  .shop-char-full[data-char="L"],
+  .shop-char-full[data-char="C"] { max-width: min(154px, 42vw); }
+  /* A petite / J tall / L·C medium; feet aligned (flex-end). */
+  .shop-char-full[data-char="A"] .shop-char-body {
     width: min(140px, 38vw);
     max-height: none;
     height: auto;
   }
-  .shop-char-full.opp .shop-char-body {
+  .shop-char-full[data-char="J"] .shop-char-body {
     width: min(160px, 44vw);
     max-height: none;
     height: auto;
   }
-  .shop-char-full.you .shop-full {
+  .shop-char-full[data-char="L"] .shop-char-body,
+  .shop-char-full[data-char="C"] .shop-char-body {
+    width: min(148px, 40vw);
+    max-height: none;
+    height: auto;
+  }
+  .shop-char-full[data-char="A"] .shop-full {
     width: min(140px, 38vw);
     height: auto;
     max-height: min(50vh, 360px);
@@ -2157,10 +2177,19 @@ button { font-family: inherit; }
     object-position: bottom center;
     image-rendering: auto;
   }
-  .shop-char-full.opp .shop-full {
+  .shop-char-full[data-char="J"] .shop-full {
     width: min(160px, 44vw);
     height: auto;
     max-height: min(56vh, 400px);
+    object-fit: contain;
+    object-position: bottom center;
+    image-rendering: auto;
+  }
+  .shop-char-full[data-char="L"] .shop-full,
+  .shop-char-full[data-char="C"] .shop-full {
+    width: min(148px, 40vw);
+    height: auto;
+    max-height: min(52vh, 380px);
     object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;
@@ -2380,22 +2409,59 @@ button { font-family: inherit; }
   padding-left: max(4px, var(--safe-left));
   padding-right: max(4px, var(--safe-right));
 }
+/* Side slots: layout only — height comes from data-char (A petite / J tall / L·C medium).
+   Slightly narrower max-width so sides don't dominate the stage. */
 .shop-char-full.side-left,
 .shop-char-full.side-right {
-  max-width: min(140px, 18vw);
   z-index: 3;
 }
-.shop-char-full.side-left .shop-char-body,
-.shop-char-full.side-right .shop-char-body {
-  width: min(120px, 16vw);
+.shop-char-full.side-left[data-char="A"],
+.shop-char-full.side-right[data-char="A"] {
+  max-width: min(200px, 26vw);
 }
-.shop-char-full.side-left .shop-full,
-.shop-char-full.side-right .shop-full {
-  width: min(120px, 16vw);
-  height: 48vh;
-  max-height: 420px;
-  object-fit: contain;
-  object-position: bottom center;
+.shop-char-full.side-left[data-char="J"],
+.shop-char-full.side-right[data-char="J"] {
+  max-width: min(230px, 28vw);
+}
+.shop-char-full.side-left[data-char="L"],
+.shop-char-full.side-right[data-char="L"],
+.shop-char-full.side-left[data-char="C"],
+.shop-char-full.side-right[data-char="C"] {
+  max-width: min(210px, 27vw);
+}
+.shop-char-full.side-left[data-char="A"] .shop-char-body,
+.shop-char-full.side-right[data-char="A"] .shop-char-body {
+  width: min(200px, 26vw);
+}
+.shop-char-full.side-left[data-char="J"] .shop-char-body,
+.shop-char-full.side-right[data-char="J"] .shop-char-body {
+  width: min(230px, 28vw);
+}
+.shop-char-full.side-left[data-char="L"] .shop-char-body,
+.shop-char-full.side-right[data-char="L"] .shop-char-body,
+.shop-char-full.side-left[data-char="C"] .shop-char-body,
+.shop-char-full.side-right[data-char="C"] .shop-char-body {
+  width: min(210px, 27vw);
+}
+.shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
+  width: min(200px, 26vw);
+  height: 52vh;
+  max-height: 520px;
+}
+.shop-char-full.side-left[data-char="J"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-right[data-char="J"] .shop-full:not(.shop-portrait) {
+  width: min(230px, 28vw);
+  height: 60vh;
+  max-height: 600px;
+}
+.shop-char-full.side-left[data-char="L"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
+  width: min(210px, 27vw);
+  height: 55vh;
+  max-height: 550px;
 }
 .shop-char-body.portrait {
   align-items: center;
@@ -2445,19 +2511,51 @@ button { font-family: inherit; }
     gap: 0;
     justify-content: space-evenly;
   }
-  .shop-char-full.side-left { margin-right: -10px; max-width: min(86px, 22vw); }
-  .shop-char-full.side-right { margin-left: -10px; max-width: min(86px, 22vw); }
+  .shop-char-full.side-left { margin-right: -10px; }
+  .shop-char-full.side-right { margin-left: -10px; }
   .shop-char-full.you { margin-right: -14px; }
   .shop-char-full.opp { margin-left: -14px; }
-  .shop-char-full.side-left .shop-char-body,
-  .shop-char-full.side-right .shop-char-body {
-    width: min(78px, 20vw);
+  .shop-char-full.side-left[data-char="A"],
+  .shop-char-full.side-right[data-char="A"] { max-width: min(100px, 26vw); }
+  .shop-char-full.side-left[data-char="J"],
+  .shop-char-full.side-right[data-char="J"] { max-width: min(114px, 30vw); }
+  .shop-char-full.side-left[data-char="L"],
+  .shop-char-full.side-right[data-char="L"],
+  .shop-char-full.side-left[data-char="C"],
+  .shop-char-full.side-right[data-char="C"] { max-width: min(106px, 28vw); }
+  .shop-char-full.side-left[data-char="A"] .shop-char-body,
+  .shop-char-full.side-right[data-char="A"] .shop-char-body {
+    width: min(94px, 24vw);
   }
-  .shop-char-full.side-left .shop-full,
-  .shop-char-full.side-right .shop-full {
-    width: min(78px, 20vw);
+  .shop-char-full.side-left[data-char="J"] .shop-char-body,
+  .shop-char-full.side-right[data-char="J"] .shop-char-body {
+    width: min(108px, 28vw);
+  }
+  .shop-char-full.side-left[data-char="L"] .shop-char-body,
+  .shop-char-full.side-right[data-char="L"] .shop-char-body,
+  .shop-char-full.side-left[data-char="C"] .shop-char-body,
+  .shop-char-full.side-right[data-char="C"] .shop-char-body {
+    width: min(100px, 26vw);
+  }
+  .shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
+    width: min(94px, 24vw);
     height: auto;
-    max-height: min(38vh, 260px);
+    max-height: min(42vh, 300px);
+  }
+  .shop-char-full.side-left[data-char="J"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-right[data-char="J"] .shop-full:not(.shop-portrait) {
+    width: min(108px, 28vw);
+    height: auto;
+    max-height: min(48vh, 340px);
+  }
+  .shop-char-full.side-left[data-char="L"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
+    width: min(100px, 26vw);
+    height: auto;
+    max-height: min(44vh, 320px);
   }
   .shop-char-full.side-left .shop-full.shop-portrait,
   .shop-char-full.side-right .shop-full.shop-portrait {
