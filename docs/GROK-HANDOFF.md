@@ -41,7 +41,7 @@ Away (back) holds were **not** changed: `player-hold-{beer,coffee,cigarette}.png
 
 Shop wiring swaps Face vs Away in `playerFullSrc()` (`src/ui/app.ts`). Cache bust: bump `HOLD_POSE_V`, `src/main.ts` hold string, `VERSION`, `package.json`, `src/version.ts`, `public/sw.js` `CACHE` together. SW uses `ignoreSearch: true`.
 
-**Date branding:** In Chinese UI, shop still says English **Date** / `Date ❤️` / `Date · 钱包` (v1.4.39). Do **not** “fix” to 约会 unless the user asks.
+**Shop branding (v1.4.45):** User-facing labels are **Shop** / `Shop · 钱包` (no Date, no ❤️). Do **not** translate Shop to 约会 unless the user asks.
 
 ## Do not repeat (Face holds)
 
