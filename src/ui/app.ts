@@ -21,7 +21,7 @@ import { rollingPayout, selfTestWin } from "../game/win";
 import { APP_VERSION } from "../version";
 import { isMuted, loadMute, resume, setMuted, sfx } from "./audio";
 import { tileFaceSvg, tileCssClass } from "./tileFace";
-import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, getAFace, loadAFace, setAFace, t, type Lang, type AutoPace, type AFace } from "./i18n";
+import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, t, type Lang, type AutoPace } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
 import { loadSave, saveGame } from "./persist";
 import {
@@ -298,9 +298,6 @@ function seatRelLabel(i: number): string {
 }
 
 function charAvatarSrc(id: CharId): string {
-  if (id === "A") {
-    return getAFace() === "camera" ? "avatars/player-face.png?v=face7" : "avatars/player.png?v=a1";
-  }
   return CHAR_DEFS[id].avatarSrc;
 }
 
@@ -323,23 +320,11 @@ function propEmoji(id: ShopPropId): string {
 const HOLD_POSE_V = "hold11";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
-  const face = getAFace() === "camera";
-  if (prop === "cigarette") {
-    return face
-      ? `chars/player-hold-cigarette-face.png?v=${HOLD_POSE_V}`
-      : `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
-  }
-  if (prop === "beer") {
-    return face
-      ? `chars/player-hold-beer-face.png?v=${HOLD_POSE_V}`
-      : `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
-  }
-  if (prop === "coffee") {
-    return face
-      ? `chars/player-hold-coffee-face.png?v=${HOLD_POSE_V}`
-      : `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
-  }
-  return face ? `chars/player-face.png?v=${HOLD_POSE_V}` : "chars/player-full.png?v=cut3";
+  /* A face-flip toggle removed — always use away/back art (face PNGs kept on disk). */
+  if (prop === "cigarette") return `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
+  if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
+  return "chars/player-full.png?v=cut3";
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {
@@ -363,22 +348,11 @@ function rightFullSrc(prop?: ShopPropId | null): string {
   return `chars/right-full.png?v=${HOLD_POSE_V}`;
 }
 
-function faceFlipBtn(where: "dock" | "shop"): string {
-  // Face flip is A-art only — hide when human is not A.
-  if (getHumanChar() !== "A") return "";
-  const face = getAFace();
-  const next = face === "camera" ? "away" : "camera";
-  const label = face === "camera" ? t("faceCamera") : t("faceAway");
-  const extra = where === "shop" ? " shop-face-flip" : "";
-  return `<button type="button" class="face-flip${extra}" data-act="a-face" data-face="${next}" data-where="${where}" aria-label="${t("faceAria")}: ${label}" title="${t("faceAria")}">↻</button>`;
-}
-
 function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
   const cid = charAtSeat(i);
   const src = charAvatarSrc(cid);
   const rel = seatRelLabel(i);
-  const flip = i === 0 && cid === "A" ? faceFlipBtn("dock") : "";
   const prop = seatProp[i];
   const badge =
     prop && defOf(cid).body === "portrait"
@@ -387,7 +361,6 @@ function avatarHtml(i: number, active: boolean): string {
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
       <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
-      ${flip}
       ${badge}
     </div>
     <div class="avatar-meta">
@@ -626,7 +599,6 @@ function shopOverlay(): string {
       ${shopCharFigure(0, "you")}
       ${shopCharFigure(2, "opp")}
       ${shopCharFigure(1, "side-right")}
-      ${faceFlipBtn("shop")}
     </div>
     <aside class="shop-panel">
       <div class="shop-panel-head">
@@ -871,20 +843,6 @@ function patchShopUi(mute: string): boolean {
       badge.remove();
     }
   });
-
-  const flip = scene.querySelector<HTMLButtonElement>(".shop-face-flip");
-  if (flip) {
-    if (getHumanChar() !== "A") {
-      flip.remove();
-    } else {
-      const face = getAFace();
-      const next = face === "camera" ? "away" : "camera";
-      const label = face === "camera" ? t("faceCamera") : t("faceAway");
-      flip.dataset.face = next;
-      flip.setAttribute("aria-label", `${t("faceAria")}: ${label}`);
-      flip.title = t("faceAria");
-    }
-  }
 
   const wallet = state.players[0]!.cash;
   scene.querySelectorAll<HTMLButtonElement>(".shop-buy").forEach((btn) => {
@@ -1361,14 +1319,6 @@ function onClick(ev: Event): void {
     render();
     return;
   }
-  if (act === "a-face") {
-    if (getHumanChar() !== "A") return;
-    const f = el.dataset.face === "camera" ? "camera" : "away";
-    setAFace(f as AFace);
-    sfx.click();
-    render();
-    return;
-  }
   if (act === "char-set") {
     const c = el.dataset.char;
     if (!isCharId(c)) return;
@@ -1398,10 +1348,10 @@ function onClick(ev: Event): void {
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "next" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "char-set" && act !== "close-result") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "char-set" && act !== "close-result" && act !== "refuel")
+  if (busy && act !== "mute" && act !== "shop" && act !== "next" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "char-set" && act !== "close-result") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "char-set" && act !== "close-result" && act !== "refuel")
     return;
-  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
+  if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "close-result") return;
 
   if (act === "select") {
     clearAutoTimer();
@@ -1529,7 +1479,6 @@ export function start(el: HTMLElement): void {
   loadTips();
   loadAutoTips();
   loadAutoPace();
-  loadAFace();
   loadHumanChar();
   root = el;
   root.addEventListener("click", onClick);

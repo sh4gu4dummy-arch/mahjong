@@ -12,7 +12,7 @@ export type CharBody = "player" | "opposite" | "portrait";
 export interface CharDef {
   id: CharId;
   letter: CharId;
-  /** Default circular avatar (A may swap to face via getAFace). */
+  /** Default circular avatar. */
   avatarSrc: string;
   body: CharBody;
 }

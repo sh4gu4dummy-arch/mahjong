@@ -1955,7 +1955,7 @@ button { font-family: inherit; }
   user-select: none;
   pointer-events: none;
 }
-/* Height by character identity (not seat role) — A petite, J tall, L/C medium */
+/* Height by character identity (not seat role) — A petite, J tallest, L/C ≈ J− */
 .shop-char-full[data-char="A"] .shop-full {
   /* ~J shoulder height when feet aligned */
   width: min(250px, 32vw);
@@ -1973,9 +1973,10 @@ button { font-family: inherit; }
 }
 .shop-char-full[data-char="L"] .shop-full,
 .shop-char-full[data-char="C"] .shop-full {
-  width: min(260px, 33vw);
-  height: 66vh;
-  max-height: 660px;
+  /* ~95% of J — L/C read near A+/J− when feet aligned */
+  width: min(280px, 35vw);
+  height: 70vh;
+  max-height: 700px;
   object-fit: contain;
   object-position: bottom center;
 }
@@ -1987,7 +1988,7 @@ button { font-family: inherit; }
 }
 .shop-char-full[data-char="L"] .shop-char-body,
 .shop-char-full[data-char="C"] .shop-char-body {
-  width: min(260px, 33vw);
+  width: min(280px, 35vw);
 }
 .shop-char-label { display: none !important; }
 .shop-char-body .hand-prop {
@@ -2151,8 +2152,8 @@ button { font-family: inherit; }
   .shop-char-full[data-char="A"] { max-width: min(148px, 40vw); }
   .shop-char-full[data-char="J"] { max-width: min(168px, 46vw); }
   .shop-char-full[data-char="L"],
-  .shop-char-full[data-char="C"] { max-width: min(154px, 42vw); }
-  /* A petite / J tall / L·C medium; feet aligned (flex-end). */
+  .shop-char-full[data-char="C"] { max-width: min(162px, 44vw); }
+  /* A petite / J tallest / L·C ≈ J−; feet aligned (flex-end). */
   .shop-char-full[data-char="A"] .shop-char-body {
     width: min(140px, 38vw);
     max-height: none;
@@ -2165,7 +2166,7 @@ button { font-family: inherit; }
   }
   .shop-char-full[data-char="L"] .shop-char-body,
   .shop-char-full[data-char="C"] .shop-char-body {
-    width: min(148px, 40vw);
+    width: min(155px, 42vw);
     max-height: none;
     height: auto;
   }
@@ -2187,9 +2188,9 @@ button { font-family: inherit; }
   }
   .shop-char-full[data-char="L"] .shop-full,
   .shop-char-full[data-char="C"] .shop-full {
-    width: min(148px, 40vw);
+    width: min(155px, 42vw);
     height: auto;
-    max-height: min(52vh, 380px);
+    max-height: min(54vh, 390px);
     object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;
@@ -2409,7 +2410,7 @@ button { font-family: inherit; }
   padding-left: max(4px, var(--safe-left));
   padding-right: max(4px, var(--safe-right));
 }
-/* Side slots: layout only — height comes from data-char (A petite / J tall / L·C medium).
+/* Side slots: L/C sized near center-A scale (not dwarfed vs you/opp); J still tallest.
    Slightly narrower max-width so sides don't dominate the stage. */
 .shop-char-full.side-left,
 .shop-char-full.side-right {
@@ -2427,7 +2428,7 @@ button { font-family: inherit; }
 .shop-char-full.side-right[data-char="L"],
 .shop-char-full.side-left[data-char="C"],
 .shop-char-full.side-right[data-char="C"] {
-  max-width: min(210px, 27vw);
+  max-width: min(225px, 28vw);
 }
 .shop-char-full.side-left[data-char="A"] .shop-char-body,
 .shop-char-full.side-right[data-char="A"] .shop-char-body {
@@ -2441,7 +2442,7 @@ button { font-family: inherit; }
 .shop-char-full.side-right[data-char="L"] .shop-char-body,
 .shop-char-full.side-left[data-char="C"] .shop-char-body,
 .shop-char-full.side-right[data-char="C"] .shop-char-body {
-  width: min(210px, 27vw);
+  width: min(225px, 28vw);
 }
 .shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
@@ -2459,9 +2460,10 @@ button { font-family: inherit; }
 .shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
-  width: min(210px, 27vw);
-  height: 55vh;
-  max-height: 550px;
+  /* Match center-A visual scale (62vh/620) at side seats */
+  width: min(225px, 28vw);
+  height: 62vh;
+  max-height: 620px;
 }
 .shop-char-body.portrait {
   align-items: center;
@@ -2522,7 +2524,7 @@ button { font-family: inherit; }
   .shop-char-full.side-left[data-char="L"],
   .shop-char-full.side-right[data-char="L"],
   .shop-char-full.side-left[data-char="C"],
-  .shop-char-full.side-right[data-char="C"] { max-width: min(106px, 28vw); }
+  .shop-char-full.side-right[data-char="C"] { max-width: min(112px, 29vw); }
   .shop-char-full.side-left[data-char="A"] .shop-char-body,
   .shop-char-full.side-right[data-char="A"] .shop-char-body {
     width: min(94px, 24vw);
@@ -2535,7 +2537,7 @@ button { font-family: inherit; }
   .shop-char-full.side-right[data-char="L"] .shop-char-body,
   .shop-char-full.side-left[data-char="C"] .shop-char-body,
   .shop-char-full.side-right[data-char="C"] .shop-char-body {
-    width: min(100px, 26vw);
+    width: min(106px, 27vw);
   }
   .shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
   .shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
@@ -2553,9 +2555,9 @@ button { font-family: inherit; }
   .shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
   .shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
   .shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
-    width: min(100px, 26vw);
+    width: min(106px, 27vw);
     height: auto;
-    max-height: min(44vh, 320px);
+    max-height: min(47vh, 335px);
   }
   .shop-char-full.side-left .shop-full.shop-portrait,
   .shop-char-full.side-right .shop-full.shop-portrait {
@@ -2566,57 +2568,9 @@ button { font-family: inherit; }
   .shop-prop-badge { font-size: 20px; bottom: 36%; }
 }
 
-/* Tiny A-face flip badge on avatar / shop sprite */
+/* Avatar ring positions prop badge overlays */
 .avatar-ring {
   position: relative;
-}
-.face-flip {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  z-index: 3;
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1.5px solid #efd48a;
-  background: linear-gradient(180deg, #c9a24a, #8a6a28);
-  color: #1a1208;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,.45);
-  touch-action: manipulation;
-  font-family: inherit;
-}
-.face-flip:active { transform: scale(0.92); }
-.dock-bar .face-flip {
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
-  min-height: 16px;
-  font-size: 10px;
-}
-/* Date Face flip: corner of the park stage, clear of A/J */
-.shop-stage > .shop-face-flip {
-  position: absolute;
-  left: max(8px, var(--safe-left));
-  bottom: 8px;
-  top: auto;
-  right: auto;
-  z-index: 12;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  font-size: 18px;
-  pointer-events: auto;
 }
 .shop-char-full.you {
   z-index: 5;

@@ -29,17 +29,18 @@ Never paste API tokens into chat. Never deploy uncommitted WIP.
 
 ## What shipped (Face / Date)
 
-Date shop, A facing camera (`getAFace() === "camera"`):
+A Face (camera) art still on disk (identity lock / future use):
 
 - `public/chars/player-hold-beer-face.png`
 - `public/chars/player-hold-coffee-face.png`
 - `public/chars/player-hold-cigarette-face.png`
+- Idle Face A: `public/chars/player-face.png` (280×720 RGBA pullover, hands in pocket).
 
-Idle Face A (locked identity): `public/chars/player-face.png` (280×720 RGBA pullover, hands in pocket). Restored historically from `4f1af4a` + hair-harden; straight side-part; no waves.
+**v1.4.50:** shop + dock **face-flip toggle removed**. UI always shows Away/back A (`player-full` / `player-hold-*`, avatar `avatars/player.png`). Face PNGs kept; no `getAFace` / localStorage toggle.
 
-Away (back) holds were **not** changed: `player-hold-{beer,coffee,cigarette}.png` and opposite-male holds.
+Away (back) holds: `player-hold-{beer,coffee,cigarette}.png` and opposite-male holds.
 
-Shop wiring swaps Face vs Away in `playerFullSrc()` (`src/ui/app.ts`). Cache bust: bump `HOLD_POSE_V`, `src/main.ts` hold string, `VERSION`, `package.json`, `src/version.ts`, `public/sw.js` `CACHE` together. SW uses `ignoreSearch: true`.
+Cache bust: bump `HOLD_POSE_V` when art changes, plus `VERSION`, `package.json`, `src/version.ts`, `public/sw.js` + `play/sw.js` `CACHE` together. SW uses `ignoreSearch: true`.
 
 **Shop branding (v1.4.45):** User-facing labels are **Shop** / `Shop · 钱包` (no Date, no ❤️). Do **not** translate Shop to 约会 unless the user asks.
 

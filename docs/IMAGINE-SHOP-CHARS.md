@@ -13,12 +13,12 @@ Drafted 2026-09-25 for Ash. Repo previously had **no** create-from-scratch SOP; 
 | Cutout | Ship only RGBA cutouts (transparent corners). Run `npm run verify:cutouts` / scripts/verify-cutouts.mjs after add. See skill *Transparent overlay cutouts*. |
 | Holds | Same body + wardrobe as idle. **Right arm out of pocket**, fingers around a **hand-sized** prop; left hand stays in pocket (A Face-hold rule). No floating sticker props; no pocketed idle body paste. |
 | Identity | Paste-lock / img2img face+hair from the **avatar** crop for that letter. Do not invent a new face. |
-| Files to drop | `public/chars/{left,right}-full.png` and `{left,right}-hold-{beer,coffee,cigarette}.png` (and optional `-face` variants later if we add camera flip for them). Wire in code after art lands. |
+| Files to drop | `public/chars/{left,right}-full.png` and `{left,right}-hold-{beer,coffee,cigarette}.png` Wire in code after art lands. |
 
 Seat map (table): **0=A you, 1=L right, 2=J opp, 3=C left**.  
 Avatar refs: L = `public/avatars/right.png`, C = `public/avatars/left.png`.
 
-Height in UI (code): **J always taller than A**; L/C medium between them once full bodies exist.
+Height in UI (code): **J tallest**; L/C ≈ just under J (near A+ / not dwarfed); A petite. Side slots size L/C near center-A scale.
 
 ---
 

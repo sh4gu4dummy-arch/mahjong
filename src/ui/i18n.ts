@@ -46,9 +46,6 @@ const dict = {
   drawGameSub: { zh: "牌墙摸完，本局赌注不变。", en: "Wall exhausted — stakes stay." },
   nextRound: { zh: "下一局", en: "Next round" },
   closeResult: { zh: "关闭", en: "Close" },
-  faceAway: { zh: "背影", en: "Away" },
-  faceCamera: { zh: "正面", en: "Face" },
-  faceAria: { zh: "切换形象", en: "Switch look" },
   resetCash: { zh: "现金重置为 $100", en: "Reset cash to $100" },
   youWin: { zh: "你胡了", en: "You win" },
   youPaid: { zh: "你付了", en: "You paid" },
@@ -238,23 +235,3 @@ export function paceFactor(): number {
   return autoPace === "slow" ? 5 : 0.65;
 }
 
-const FACE_KEY = "aa-mahjong-a-face";
-export type AFace = "away" | "camera";
-let aFace: AFace = "away";
-
-export function loadAFace(): AFace {
-  try {
-    const v = localStorage.getItem(FACE_KEY);
-    if (v === "camera" || v === "away") aFace = v;
-  } catch { /* ignore */ }
-  return aFace;
-}
-
-export function getAFace(): AFace {
-  return aFace;
-}
-
-export function setAFace(next: AFace): void {
-  aFace = next === "camera" ? "camera" : "away";
-  try { localStorage.setItem(FACE_KEY, aFace); } catch { /* ignore */ }
-}
