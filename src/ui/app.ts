@@ -311,14 +311,16 @@ function playerAvatarSrc(): string {
 function shopFigureSrc(id: CharId, prop?: ShopPropId | null): { kind: "full" | "portrait"; src: string } {
   if (id === "A") return { kind: "full", src: playerFullSrc(prop) };
   if (id === "J") return { kind: "full", src: oppositeFullSrc(prop) };
-  return { kind: "portrait", src: CHAR_DEFS[id].avatarSrc };
+  if (id === "L") return { kind: "full", src: rightFullSrc(prop) };
+  // C (and any future portrait-only id)
+  return { kind: "full", src: leftFullSrc(prop) };
 }
 
 function propEmoji(id: ShopPropId): string {
   return SHOP_ITEMS.find((x) => x.id === id)?.emoji ?? "";
 }
 
-const HOLD_POSE_V = "hold10";
+const HOLD_POSE_V = "hold11";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
   const face = getAFace() === "camera";
@@ -345,6 +347,20 @@ function oppositeFullSrc(prop?: ShopPropId | null): string {
   if (prop === "coffee") return `chars/opposite-hold-coffee.png?v=${HOLD_POSE_V}`;
   if (prop === "cigarette") return `chars/opposite-hold-cigarette.png?v=${HOLD_POSE_V}`;
   return "chars/opposite-full.png?v=cut3";
+}
+
+function leftFullSrc(prop?: ShopPropId | null): string {
+  if (prop === "beer") return `chars/left-hold-beer.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/left-hold-coffee.png?v=${HOLD_POSE_V}`;
+  if (prop === "cigarette") return `chars/left-hold-cigarette.png?v=${HOLD_POSE_V}`;
+  return `chars/left-full.png?v=${HOLD_POSE_V}`;
+}
+
+function rightFullSrc(prop?: ShopPropId | null): string {
+  if (prop === "beer") return `chars/right-hold-beer.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/right-hold-coffee.png?v=${HOLD_POSE_V}`;
+  if (prop === "cigarette") return `chars/right-hold-cigarette.png?v=${HOLD_POSE_V}`;
+  return `chars/right-full.png?v=${HOLD_POSE_V}`;
 }
 
 function faceFlipBtn(where: "dock" | "shop"): string {
@@ -1189,7 +1205,7 @@ function buyProp(id: ShopPropId): void {
     return;
   }
   state.players[0]!.cash -= item.price;
-  // Hold poses for A/J bodies; portrait badges for L/C — give all seats.
+  // Hold poses for A/J/L/C full bodies — give all seats.
   for (let s = 0; s < 4; s++) giveProp(s, id);
   window.setTimeout(() => render(), PROP_MS - 850);
   const nm = getLang() === "zh" ? item.nameZh : item.name;

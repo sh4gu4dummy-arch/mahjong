@@ -24,6 +24,14 @@ const TARGETS = [
   "public/chars/opposite-hold-coffee.png",
   "public/chars/opposite-hold-cigarette.png",
   "public/chars/player-face.png",
+  "public/chars/left-full.png",
+  "public/chars/left-hold-beer.png",
+  "public/chars/left-hold-coffee.png",
+  "public/chars/left-hold-cigarette.png",
+  "public/chars/right-full.png",
+  "public/chars/right-hold-beer.png",
+  "public/chars/right-hold-coffee.png",
+  "public/chars/right-hold-cigarette.png",
 ];
 
 function fail(msg) {

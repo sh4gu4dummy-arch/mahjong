@@ -1,5 +1,5 @@
 /* AA Mahjong asset cache — Cache API, not localStorage */
-const CACHE = "aa-mahjong-assets-1.4.48";
+const CACHE = "aa-mahjong-assets-1.4.49";
 const PRECACHE = [
   "avatars/left.png",
   "avatars/opposite.png",
@@ -19,6 +19,14 @@ const PRECACHE = [
   "chars/opposite-hold-beer.png",
   "chars/opposite-hold-coffee.png",
   "chars/opposite-hold-cigarette.png",
+  "chars/left-full.png",
+  "chars/left-hold-beer.png",
+  "chars/left-hold-coffee.png",
+  "chars/left-hold-cigarette.png",
+  "chars/right-full.png",
+  "chars/right-hold-beer.png",
+  "chars/right-hold-coffee.png",
+  "chars/right-hold-cigarette.png",
   "props/beer.png",
   "props/cigarette.png",
   "props/coffee.png",

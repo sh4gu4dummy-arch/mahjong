@@ -84,6 +84,15 @@ Same C character and outfit. Standing full body facing camera. RIGHT hand holdin
 
 ---
 
+
+---
+
+## Shipped v1.4.49
+
+Full-body L (`right-*`) and C (`left-*`) idle + beer/coffee/cigarette holds are on disk under `public/chars/` and wired in `shopFigureSrc` (kind `"full"`). Cache bust `HOLD_POSE_V=hold11`.
+
+**Caveat:** C beer hold (`left-hold-beer.png`) may show the bottle in the **left** hand — acceptable for v1; re-gen later if needed.
+
 ## After Imagine
 
 1. Background-remove → RGBA; tight crop; match A/J vertical framing (feet near bottom).
