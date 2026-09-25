@@ -20,6 +20,20 @@ npm run preview
 
 Dev defaults to port 5173, preview to 4173.
 
+## View locally
+
+From a clone (needs [Node.js](https://nodejs.org/) + npm):
+
+```bash
+node view-local.mjs
+```
+
+That installs deps if needed, builds `dist/` when missing, serves the production build on **http://127.0.0.1:4173** (next free port if busy), and opens your browser. Leave the terminal open; Ctrl+C stops the server.
+
+Options: `--rebuild` force a fresh build · `--port N` · `--no-open`.
+
+On macOS / Windows you can also double-click `view-local.command` / `view-local.bat`.
+
 ## How to play
 
 - **136 tiles**, no flowers: 万 / 条 / 筒 (1–9 × 4), winds 东南西北 × 4, dragons 中发白 × 4.
