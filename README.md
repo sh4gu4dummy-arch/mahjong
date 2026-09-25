@@ -4,14 +4,35 @@
 
 Win legality still uses Northeast table constraints (刻/将 · 幺九 · 三门齐), but **立胡 (closed wins) are allowed**, and cash uses **长春滚番** plus separate **蛋/杠** money.
 
-## Run
+## Play locally (simplest)
+
+Open this file in your browser (double-click, or File → Open):
+
+```
+play/index.html
+```
+
+No Node, no build step — just open it. Assets load relatively from the `play/` folder.
+
+> Tip: keep the whole `play/` folder together. Opening only a copy of `index.html` without its sibling assets won’t work.
+
+Rebuild the committed play folder after code/asset changes:
+
+```bash
+npm install
+npm run build:play
+```
+
+Ship-to-main should refresh `play/` with `npm run build:play` so local open stays current.
+
+## Develop
 
 ```bash
 npm install
 npm run dev
 ```
 
-Production:
+Production build (for GitHub Pages / deploy → `dist/`):
 
 ```bash
 npm run build
@@ -20,19 +41,15 @@ npm run preview
 
 Dev defaults to port 5173, preview to 4173.
 
-## View locally
+### Optional: live preview helper
 
-From a clone (needs [Node.js](https://nodejs.org/) + npm):
+If you want Node to build + serve with live reload convenience:
 
 ```bash
 node view-local.mjs
 ```
 
-That installs deps if needed, builds `dist/` when missing, serves the production build on **http://127.0.0.1:4173** (next free port if busy), and opens your browser. Leave the terminal open; Ctrl+C stops the server.
-
-Options: `--rebuild` force a fresh build · `--port N` · `--no-open`.
-
-On macOS / Windows you can also double-click `view-local.command` / `view-local.bat`.
+Options: `--rebuild` · `--port N` · `--no-open`. macOS / Windows shortcuts: `view-local.command` / `view-local.bat`. Most players don’t need this — use `play/index.html` instead.
 
 ## How to play
 
@@ -103,6 +120,8 @@ Open **约会**. Shared shop items: **Coffee $5**, **Cigarette $1**, **Beer $5**
 ## Stack
 
 Vite + TypeScript, vanilla DOM. Modules: `tiles`, `win` (legality + Changchun fan), `claims`, `ai`, `engine`, UI. Version: see `src/version.ts` / `package.json`.
+
+Committed **`play/`** is an IIFE build for opening via `file://`. Normal `npm run build` still outputs ES modules to `dist/` (GitHub Pages / http(s)). Service worker registers on http(s) only — skipped on `file:`.
 
 ## Tile art
 

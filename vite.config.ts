@@ -32,16 +32,37 @@ function staticAssetCacheHeaders(): Plugin {
   };
 }
 
-export default defineConfig({
-  base: "./",
-  plugins: [staticAssetCacheHeaders()],
-  server: {
-    host: true,
-    port: 5173,
-  },
-  preview: {
-    host: true,
-    port: 4173,
-    allowedHosts: true,
-  },
+export default defineConfig(({ mode }) => {
+  const isPlay = mode === "play";
+  return {
+    base: "./",
+    plugins: [staticAssetCacheHeaders()],
+    server: {
+      host: true,
+      port: 5173,
+    },
+    preview: {
+      host: true,
+      port: 4173,
+      allowedHosts: true,
+    },
+    build: {
+      outDir: isPlay ? "play" : "dist",
+      emptyOutDir: true,
+      // file:// needs a classic script (IIFE), not ES modules
+      ...(isPlay
+        ? {
+            rollupOptions: {
+              output: {
+                format: "iife" as const,
+                inlineDynamicImports: true,
+                entryFileNames: "assets/[name]-[hash].js",
+                chunkFileNames: "assets/[name]-[hash].js",
+                assetFileNames: "assets/[name]-[hash][extname]",
+              },
+            },
+          }
+        : {}),
+    },
+  };
 });

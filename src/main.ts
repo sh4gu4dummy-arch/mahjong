@@ -7,6 +7,8 @@ start(app);
 
 /** Prefer Cache API / HTTP cache — do not stuff images into localStorage. */
 function registerAssetCache(): void {
+  // Service workers are not usable / confusing on file:// (local open).
+  if (window.location.protocol === "file:") return;
   if (!("serviceWorker" in navigator)) return;
   const sw = new URL("sw.js", window.location.href);
   void navigator.serviceWorker.register(sw.href).then((reg) => {
