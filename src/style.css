@@ -1171,6 +1171,84 @@ button { font-family: inherit; }
   color: #1a1208;
   border-color: #efd48a;
 }
+
+/* Character select on bet modal */
+.char-pick-label {
+  margin: 4px 0 6px;
+  font-size: 12px;
+  color: #d9c89a;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.char-pick-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+.char-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 5px;
+  min-width: 58px;
+  border-radius: 12px;
+  border: 2px solid rgba(212,175,103,.28);
+  background: rgba(0,0,0,.28);
+  color: var(--gold);
+  cursor: pointer;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+.char-pick-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  border: 2px solid rgba(239,212,138,.55);
+  display: block;
+}
+.char-pick-letter {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+.char-pick.on {
+  border-color: var(--gold);
+  background: rgba(212,175,103,.18);
+  box-shadow: 0 0 0 2px rgba(240,215,140,.35);
+}
+.char-pick.on .char-pick-img {
+  border-color: #efd48a;
+}
+@media (max-width: 420px) {
+  .char-pick { min-width: 52px; padding: 5px 6px 4px; }
+  .char-pick-img { width: 38px; height: 38px; }
+  .char-pick-letter { font-size: 12px; }
+}
+
+.avatar-prop-badge,
+.shop-prop-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  z-index: 4;
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.55));
+  pointer-events: none;
+  animation: coffee-pop 0.35s ease-out;
+}
+.shop-prop-badge {
+  right: 6%;
+  bottom: 42%;
+  font-size: 28px;
+}
+
 .rules-mini {
   font-size: 12px;
   color: #d9c89a;
@@ -2293,6 +2371,102 @@ button { font-family: inherit; }
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
 }
 
+
+
+
+/* Four-character shop stage (you + L/C sides + opp) */
+.shop-stage-4 {
+  gap: clamp(0px, 0.8vw, 10px);
+  padding-left: max(4px, var(--safe-left));
+  padding-right: max(4px, var(--safe-right));
+}
+.shop-char-full.side-left,
+.shop-char-full.side-right {
+  max-width: min(140px, 18vw);
+  z-index: 3;
+}
+.shop-char-full.side-left .shop-char-body,
+.shop-char-full.side-right .shop-char-body {
+  width: min(120px, 16vw);
+}
+.shop-char-full.side-left .shop-full,
+.shop-char-full.side-right .shop-full {
+  width: min(120px, 16vw);
+  height: 48vh;
+  max-height: 420px;
+  object-fit: contain;
+  object-position: bottom center;
+}
+.shop-char-body.portrait {
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 8, 4, 0.35);
+  border: 2px solid rgba(212, 175, 103, 0.45);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+}
+.shop-full.shop-portrait {
+  width: min(110px, 22vw) !important;
+  height: auto !important;
+  max-height: min(28vh, 200px) !important;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  border: 3px solid rgba(239, 212, 138, 0.7);
+}
+.shop-char-full.side-left .shop-full.shop-portrait,
+.shop-char-full.side-right .shop-full.shop-portrait {
+  width: min(88px, 18vw) !important;
+  max-height: min(22vh, 140px) !important;
+}
+.shop-char-full.you .shop-full.shop-portrait {
+  width: min(130px, 28vw) !important;
+  max-height: min(32vh, 220px) !important;
+}
+.shop-char-full.opp .shop-full.shop-portrait {
+  width: min(120px, 26vw) !important;
+  max-height: min(30vh, 200px) !important;
+}
+.shop-char-tag {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(212,175,103,.4);
+  color: #f0e6c8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+@media (max-width: 900px) {
+  .shop-stage-4 {
+    gap: 0;
+    justify-content: space-evenly;
+  }
+  .shop-char-full.side-left { margin-right: -10px; max-width: min(86px, 22vw); }
+  .shop-char-full.side-right { margin-left: -10px; max-width: min(86px, 22vw); }
+  .shop-char-full.you { margin-right: -14px; }
+  .shop-char-full.opp { margin-left: -14px; }
+  .shop-char-full.side-left .shop-char-body,
+  .shop-char-full.side-right .shop-char-body {
+    width: min(78px, 20vw);
+  }
+  .shop-char-full.side-left .shop-full,
+  .shop-char-full.side-right .shop-full {
+    width: min(78px, 20vw);
+    height: auto;
+    max-height: min(38vh, 260px);
+  }
+  .shop-char-full.side-left .shop-full.shop-portrait,
+  .shop-char-full.side-right .shop-full.shop-portrait {
+    width: min(64px, 16vw) !important;
+    max-height: min(16vh, 96px) !important;
+  }
+  .shop-char-tag { font-size: 10px; padding: 0 6px; }
+  .shop-prop-badge { font-size: 20px; bottom: 36%; }
+}
 
 /* Tiny A-face flip badge on avatar / shop sprite */
 .avatar-ring {

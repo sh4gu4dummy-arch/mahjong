@@ -24,6 +24,18 @@ import { tileFaceSvg, tileCssClass } from "./tileFace";
 import { getLang, loadLang, setLang, getTips, loadTips, setTips, getAutoTips, loadAutoTips, setAutoTips, getAutoPace, loadAutoPace, setAutoPace, paceFactor, getAFace, loadAFace, setAFace, t, type Lang, type AutoPace, type AFace } from "./i18n";
 import { chooseTipDiscard } from "../game/ai";
 import { loadSave, saveGame } from "./persist";
+import {
+  CHAR_IDS,
+  CHAR_DEFS,
+  charAtSeat,
+  defOf,
+  getHumanChar,
+  isCharId,
+  loadHumanChar,
+  seatsForHuman,
+  setHumanChar,
+  type CharId,
+} from "./chars";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** When Auto is on + Slow, stretch play timing 3× so you can watch. */
@@ -70,19 +82,20 @@ function syncCashFloat(): void {
 }
 
 const BEATS_KEY = "aa-mahjong-beats";
-type BeatMap = { L: number; J: number; C: number };
+type BeatMap = { A: number; L: number; J: number; C: number };
 function loadBeats(): BeatMap {
   try {
     const raw = localStorage.getItem(BEATS_KEY);
-    if (!raw) return { L: 0, J: 0, C: 0 };
+    if (!raw) return { A: 0, L: 0, J: 0, C: 0 };
     const o = JSON.parse(raw) as Partial<BeatMap>;
     return {
+      A: typeof o.A === "number" ? o.A : 0,
       L: typeof o.L === "number" ? o.L : 0,
       J: typeof o.J === "number" ? o.J : 0,
       C: typeof o.C === "number" ? o.C : 0,
     };
   } catch {
-    return { L: 0, J: 0, C: 0 };
+    return { A: 0, L: 0, J: 0, C: 0 };
   }
 }
 function saveBeats(b: BeatMap): void {
@@ -97,7 +110,7 @@ function recordBeats(names: string[]): void {
   const b = loadBeats();
   const unique: string[] = [];
   for (const n of names) {
-    if (n === "L" || n === "J" || n === "C") {
+    if (n === "A" || n === "L" || n === "J" || n === "C") {
       b[n] += 1;
       unique.push(n);
     }
@@ -146,7 +159,7 @@ function scheduleSave(): void {
   if (saveTimer !== null) window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
     saveTimer = null;
-    saveGame(state, betDraft, selected);
+    saveGame(state, betDraft, selected, getHumanChar());
   }, 150);
 }
 
@@ -155,7 +168,7 @@ function saveNow(): void {
     window.clearTimeout(saveTimer);
     saveTimer = null;
   }
-  saveGame(state, betDraft, selected);
+  saveGame(state, betDraft, selected, getHumanChar());
 }
 
 type ShopPropId = "coffee" | "cigarette" | "beer";
@@ -182,12 +195,16 @@ const seatProp: Record<number, SeatProp | undefined> = {};
 const seatPropTimers: Record<number, number> = {};
 
 const SEAT_POS = ["bottom", "right", "top", "left"] as const;
-const SEAT_AVATAR = [
-  "avatars/player.png?v=a1",
-  "avatars/right.png?v=l1",
-  "avatars/opposite.png?v=j2",
-  "avatars/left.png?v=c2",
-] as const;
+
+/** Keep engine player.name / nameZh in sync with the current seat→char map. */
+function syncSeatNames(): void {
+  const chars = seatsForHuman(getHumanChar());
+  for (let i = 0; i < 4; i++) {
+    const id = chars[i]!;
+    state.players[i]!.name = id;
+    state.players[i]!.nameZh = id;
+  }
+}
 
 /** Counter-clockwise from East: E(0) → N(3) → W(2) → S(1) */
 const DEAL_ORDER = [0, 3, 2, 1] as const;
@@ -277,14 +294,28 @@ function cashChip(p: Player): string {
 
 
 function seatRelLabel(i: number): string {
-  if (i === 0) return t("seatYou");
-  if (i === 1) return t("seatRight"); // 下家 / next
-  if (i === 2) return t("seatOpp"); // 对家
-  return t("seatLeft"); // 上家 / prev
+  return charAtSeat(i);
+}
+
+function charAvatarSrc(id: CharId): string {
+  if (id === "A") {
+    return getAFace() === "camera" ? "avatars/player-face.png?v=face7" : "avatars/player.png?v=a1";
+  }
+  return CHAR_DEFS[id].avatarSrc;
 }
 
 function playerAvatarSrc(): string {
-  return getAFace() === "camera" ? "avatars/player-face.png?v=face7" : "avatars/player.png?v=a1";
+  return charAvatarSrc(getHumanChar());
+}
+
+function shopFigureSrc(id: CharId, prop?: ShopPropId | null): { kind: "full" | "portrait"; src: string } {
+  if (id === "A") return { kind: "full", src: playerFullSrc(prop) };
+  if (id === "J") return { kind: "full", src: oppositeFullSrc(prop) };
+  return { kind: "portrait", src: CHAR_DEFS[id].avatarSrc };
+}
+
+function propEmoji(id: ShopPropId): string {
+  return SHOP_ITEMS.find((x) => x.id === id)?.emoji ?? "";
 }
 
 const HOLD_POSE_V = "hold10";
@@ -317,24 +348,31 @@ function oppositeFullSrc(prop?: ShopPropId | null): string {
 }
 
 function faceFlipBtn(where: "dock" | "shop"): string {
+  // Face flip is A-art only — hide when human is not A.
+  if (getHumanChar() !== "A") return "";
   const face = getAFace();
   const next = face === "camera" ? "away" : "camera";
   const label = face === "camera" ? t("faceCamera") : t("faceAway");
-  // Tiny corner badge on the A avatar — flips camera/away
   const extra = where === "shop" ? " shop-face-flip" : "";
   return `<button type="button" class="face-flip${extra}" data-act="a-face" data-face="${next}" data-where="${where}" aria-label="${t("faceAria")}: ${label}" title="${t("faceAria")}">↻</button>`;
 }
 
 function avatarHtml(i: number, active: boolean): string {
   const p = state.players[i]!;
-  const src = i === 0 ? playerAvatarSrc() : SEAT_AVATAR[i]!;
+  const cid = charAtSeat(i);
+  const src = charAvatarSrc(cid);
   const rel = seatRelLabel(i);
-  const flip = i === 0 ? faceFlipBtn("dock") : "";
-  // No floating prop stickers on circular avatars
+  const flip = i === 0 && cid === "A" ? faceFlipBtn("dock") : "";
+  const prop = seatProp[i];
+  const badge =
+    prop && defOf(cid).body === "portrait"
+      ? `<span class="avatar-prop-badge" aria-hidden="true">${propEmoji(prop.id)}</span>`
+      : "";
   return `<div class="avatar-wrap ${active ? "turn" : ""}">
     <div class="avatar-ring">
       <img class="avatar" src="${src}" alt="${rel}" draggable="false" />
       ${flip}
+      ${badge}
     </div>
     <div class="avatar-meta">
       <span class="avatar-name">${rel}</span>
@@ -526,6 +564,25 @@ function eggLines(): string {
   return `<p class="sub">${t("eggMoney")}</p><ul class="fan-list">${rows}</ul>`;
 }
 
+function shopCharFigure(seat: number, role: "you" | "opp" | "side-left" | "side-right"): string {
+  const cid = charAtSeat(seat);
+  const prop = seatProp[seat]?.id ?? null;
+  const fig = shopFigureSrc(cid, prop);
+  const label = cid;
+  const badge =
+    prop && fig.kind === "portrait"
+      ? `<span class="shop-prop-badge" aria-hidden="true">${propEmoji(prop)}</span>`
+      : "";
+  const imgCls = fig.kind === "portrait" ? "shop-full shop-portrait" : "shop-full";
+  return `<div class="shop-char-full ${role}" data-seat="${seat}" data-char="${cid}">
+    <div class="shop-char-body ${fig.kind === "portrait" ? "portrait" : ""}">
+      <img class="${imgCls}" src="${fig.src}" alt="${label}" draggable="false" />
+      ${badge}
+    </div>
+    <span class="shop-char-tag">${label}</span>
+  </div>`;
+}
+
 function shopOverlay(): string {
   if (!shopOpen) return "";
   const cash = state.players[0]!.cash;
@@ -545,19 +602,14 @@ function shopOverlay(): string {
       </button>
     </div>`;
   }).join("");
+  // Table-relative stage: left(3) · you(0) · opp(2) · right(1)
   return `<div class="shop-scene" role="dialog" aria-label="${t("shopTitle")}">
     <div class="shop-bg" style="background-image:url('bg/park.png?v=park2')" aria-hidden="true"></div>
-    <div class="shop-stage">
-      <div class="shop-char-full you">
-        <div class="shop-char-body">
-          <img class="shop-full" src="${playerFullSrc(seatProp[0]?.id)}" alt="${t("seatYou")}" draggable="false" />
-        </div>
-      </div>
-      <div class="shop-char-full opp">
-        <div class="shop-char-body">
-          <img class="shop-full" src="${oppositeFullSrc(seatProp[2]?.id)}" alt="${t("seatOpp")}" draggable="false" />
-        </div>
-      </div>
+    <div class="shop-stage shop-stage-4">
+      ${shopCharFigure(3, "side-left")}
+      ${shopCharFigure(0, "you")}
+      ${shopCharFigure(2, "opp")}
+      ${shopCharFigure(1, "side-right")}
       ${faceFlipBtn("shop")}
     </div>
     <aside class="shop-panel">
@@ -595,10 +647,20 @@ function overlay(): string {
         ? `<p class="sub">${t("prideNote")}</p>
       <button class="btn" data-act="refuel" type="button">${t("refuelCash")}</button>`
         : "";
+    const human = getHumanChar();
+    const pickers = CHAR_IDS.map((id) => {
+      const on = human === id ? "on" : "";
+      return `<button type="button" class="char-pick ${on}" data-act="char-set" data-char="${id}" aria-label="${t("youAre")} ${id}" aria-pressed="${human === id ? "true" : "false"}">
+        <img class="char-pick-img" src="${charAvatarSrc(id)}" alt="${id}" draggable="false" />
+        <span class="char-pick-letter">${id}</span>
+      </button>`;
+    }).join("");
     return `<div class="overlay"><div class="modal">
-      <div class="modal-hero"><img class="avatar hero" src="${playerAvatarSrc()}" alt="${t("you")}" /></div>
+      <div class="modal-hero"><img class="avatar hero" src="${playerAvatarSrc()}" alt="${human}" /></div>
       <h2>${t("brand")}</h2>
-      <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)}</p>
+      <p class="sub">${t("hand")} ${state.handNumber} · ${t("youHave")} ${formatCash(cash)} · ${t("youAre")} ${human}</p>
+      <p class="char-pick-label">${t("pickCharacter")}</p>
+      <div class="char-pick-row" role="group" aria-label="${t("pickCharacter")}">${pickers}</div>
       <div class="bet-row">${chips}</div>
       ${zeroNote}
       ${t("rulesMini") ? `<p class="rules-mini">${t("rulesMini")}</p>` : ""}
@@ -771,21 +833,41 @@ function patchShopUi(mute: string): boolean {
     }
   });
 
-  const youSrc = playerFullSrc(seatProp[0]?.id);
-  const oppSrc = oppositeFullSrc(seatProp[2]?.id);
-  const youImg = scene.querySelector<HTMLImageElement>(".shop-char-full.you .shop-full");
-  const oppImg = scene.querySelector<HTMLImageElement>(".shop-char-full.opp .shop-full");
-  if (youImg && youImg.getAttribute("src") !== youSrc) youImg.src = youSrc;
-  if (oppImg && oppImg.getAttribute("src") !== oppSrc) oppImg.src = oppSrc;
+  scene.querySelectorAll<HTMLElement>(".shop-char-full[data-seat]").forEach((wrap) => {
+    const seat = Number(wrap.dataset.seat);
+    if (!Number.isFinite(seat)) return;
+    const cid = charAtSeat(seat);
+    const prop = seatProp[seat]?.id ?? null;
+    const fig = shopFigureSrc(cid, prop);
+    const img = wrap.querySelector<HTMLImageElement>(".shop-full");
+    if (img && img.getAttribute("src") !== fig.src) img.src = fig.src;
+    let badge = wrap.querySelector<HTMLElement>(".shop-prop-badge");
+    if (prop && fig.kind === "portrait") {
+      const emoji = propEmoji(prop);
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "shop-prop-badge";
+        badge.setAttribute("aria-hidden", "true");
+        wrap.querySelector(".shop-char-body")?.appendChild(badge);
+      }
+      badge.textContent = emoji;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
 
   const flip = scene.querySelector<HTMLButtonElement>(".shop-face-flip");
   if (flip) {
-    const face = getAFace();
-    const next = face === "camera" ? "away" : "camera";
-    const label = face === "camera" ? t("faceCamera") : t("faceAway");
-    flip.dataset.face = next;
-    flip.setAttribute("aria-label", `${t("faceAria")}: ${label}`);
-    flip.title = t("faceAria");
+    if (getHumanChar() !== "A") {
+      flip.remove();
+    } else {
+      const face = getAFace();
+      const next = face === "camera" ? "away" : "camera";
+      const label = face === "camera" ? t("faceCamera") : t("faceAway");
+      flip.dataset.face = next;
+      flip.setAttribute("aria-label", `${t("faceAria")}: ${label}`);
+      flip.title = t("faceAria");
+    }
   }
 
   const wallet = state.players[0]!.cash;
@@ -1107,11 +1189,11 @@ function buyProp(id: ShopPropId): void {
     return;
   }
   state.players[0]!.cash -= item.price;
-  giveProp(0, id);
-  giveProp(2, id);
+  // Hold poses for A/J bodies; portrait badges for L/C — give all seats.
+  for (let s = 0; s < 4; s++) giveProp(s, id);
   window.setTimeout(() => render(), PROP_MS - 850);
   const nm = getLang() === "zh" ? item.nameZh : item.name;
-  shopFlash = `${item.emoji} ${nm} ${t("forBoth")}`;
+  shopFlash = `${item.emoji} ${nm} ${t("forAll")}`;
   sfx.claim();
   scheduleSave();
   render();
@@ -1126,6 +1208,7 @@ function goNext(): void {
   dealReveal = null;
   flyDraw = null;
   nextHand(state);
+  syncSeatNames();
   selected = null;
   busy = false;
   const cash = state.players[0]!.cash;
@@ -1153,6 +1236,7 @@ function goReset(): void {
   dealReveal = null;
   flyDraw = null;
   state = resetTable();
+  syncSeatNames();
   selected = null;
   busy = false;
   betDraft = 10;
@@ -1262,9 +1346,20 @@ function onClick(ev: Event): void {
     return;
   }
   if (act === "a-face") {
+    if (getHumanChar() !== "A") return;
     const f = el.dataset.face === "camera" ? "camera" : "away";
     setAFace(f as AFace);
     sfx.click();
+    render();
+    return;
+  }
+  if (act === "char-set") {
+    const c = el.dataset.char;
+    if (!isCharId(c)) return;
+    setHumanChar(c);
+    syncSeatNames();
+    sfx.click();
+    scheduleSave();
     render();
     return;
   }
@@ -1280,14 +1375,15 @@ function onClick(ev: Event): void {
     const cash = state.players[0]!.cash;
     const stake = cash === 0 ? 0 : Math.max(0, Math.min(betDraft, cash));
     beginRound(state, stake);
+    syncSeatNames();
     selected = null;
     sfx.click();
     scheduleSave();
     void startDealAnimation();
     return;
   }
-  if (busy && act !== "mute" && act !== "shop" && act !== "next" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
-  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result")
+  if (busy && act !== "mute" && act !== "shop" && act !== "next" && act !== "shop-close" && act !== "buy-prop" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "char-set" && act !== "close-result") return;
+  if (state.phase === "bet" && act !== "shop" && act !== "shop-close" && act !== "buy-prop" && act !== "bet-set" && act !== "deal" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "char-set" && act !== "close-result" && act !== "refuel")
     return;
   if (shopOpen && act !== "shop-close" && act !== "buy-prop" && act !== "mute" && act !== "lang" && act !== "tips" && act !== "auto-tips" && act !== "auto-pace" && act !== "a-face" && act !== "close-result") return;
 
@@ -1418,6 +1514,7 @@ export function start(el: HTMLElement): void {
   loadAutoTips();
   loadAutoPace();
   loadAFace();
+  loadHumanChar();
   root = el;
   root.addEventListener("click", onClick);
   root.addEventListener("dblclick", onDblClick);
@@ -1438,6 +1535,8 @@ export function start(el: HTMLElement): void {
     state = saved.state;
     betDraft = saved.betDraft;
     selected = saved.selected;
+    if (saved.humanChar) setHumanChar(saved.humanChar);
+    syncSeatNames();
     // Drop stale selection if that tile is no longer in hand.
     if (selected !== null && !state.players[0]!.hand.some((t) => t.id === selected)) {
       selected = null;
@@ -1455,6 +1554,7 @@ export function start(el: HTMLElement): void {
     return;
   }
 
+  syncSeatNames();
   render();
 }
 

@@ -59,7 +59,7 @@ const dict = {
   discardWinHow: { zh: "点炮", en: "Discard win" },
   shopTitle: { zh: "Shop", en: "Shop" },
   shopSub: { zh: "Shop · 钱包", en: "Shop · Wallet" },
-  shopBoth: { zh: "两人短暂同持", en: "Both hold it briefly" },
+  shopBoth: { zh: "四人短暂同持", en: "Everyone holds it briefly" },
   buy: { zh: "买", en: "Buy" },
   close: { zh: "关闭", en: "Close" },
   walletEmpty: {
@@ -67,7 +67,10 @@ const dict = {
     en: "Wallet empty — you can still browse. Win a hand to refill.",
   },
   needMoney: { zh: "钱不够", en: "Need more cash" },
-  forBoth: { zh: "给你们俩！", en: "for both of you!" },
+  forBoth: { zh: "给大家！", en: "for everyone!" },
+  forAll: { zh: "给大家！", en: "for everyone!" },
+  pickCharacter: { zh: "选择角色", en: "Choose character" },
+  youAre: { zh: "你是", en: "You are" },
   hint: {
     zh: "只能吃上家 · 碰/杠/胡不限谁 · 可立胡 · 胡牌需有刻（或中发白将）/幺九/三门齐 · 长春滚番结算",
     en: "Chow only from left · pung/kong/win from anyone · closed hand OK · win needs a pung (or dragon eyes) / terminal / three suits · Changchun rolling fan",

@@ -1,4 +1,5 @@
 import type { GameState, Phase, Player, Tile, Wind } from "../game/types";
+import { isCharId, type CharId } from "./chars";
 
 const KEY = "aa-mahjong-save";
 const SAVE_VERSION = 1 as const;
@@ -8,6 +9,8 @@ export interface SavePayload {
   state: GameState;
   betDraft: number;
   selected: number | null;
+  /** Chosen human character (A/L/J/C). Optional for older saves. */
+  humanChar?: CharId;
 }
 
 const PHASES: Phase[] = ["bet", "idle", "discard", "claim", "draw", "over"];
@@ -76,15 +79,21 @@ export function loadSave(): SavePayload | null {
     if (!Array.isArray(state.pendingAiClaims)) state.pendingAiClaims = [];
     if (!Array.isArray(state.eggPayouts)) state.eggPayouts = [];
     if (!Array.isArray(state.justBeaten)) state.justBeaten = [];
-    return { v: SAVE_VERSION, state, betDraft, selected };
+    const humanChar = isCharId(obj.humanChar) ? obj.humanChar : undefined;
+    return { v: SAVE_VERSION, state, betDraft, selected, humanChar };
   } catch {
     return null;
   }
 }
 
-export function saveGame(state: GameState, betDraft: number, selected: number | null): void {
+export function saveGame(
+  state: GameState,
+  betDraft: number,
+  selected: number | null,
+  humanChar: CharId = "A",
+): void {
   try {
-    const payload: SavePayload = { v: SAVE_VERSION, state, betDraft, selected };
+    const payload: SavePayload = { v: SAVE_VERSION, state, betDraft, selected, humanChar };
     localStorage.setItem(KEY, JSON.stringify(payload));
   } catch {
     // Quota / private mode — ignore
@@ -98,4 +107,3 @@ export function clearSave(): void {
     // ignore
   }
 }
-
