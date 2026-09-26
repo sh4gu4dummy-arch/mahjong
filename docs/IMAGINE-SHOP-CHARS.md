@@ -87,13 +87,15 @@ Same C character and outfit. Standing full body facing camera. RIGHT hand holdin
 
 ---
 
-## Pending art (v1.4.53 height shipped; skin regen blocked)
+## Shipped art updates (v1.4.54)
 
-**v1.4.53:** Shop height CSS ladder **J > L > C > A** shipped. L lighter-skin Imagine regen was **not** available on the executor (`GenerateImage` / CallDynamicTool parent-native only) — do **not** ship PIL fake bodies. Parent should re-run Imagine for L idle + holds + avatar (`right-full`, `right-hold-*`, `avatars/right.png`) with light/fair-warm skin, then bump `HOLD_POSE_V` hold11→hold12 and avatar `?v=l1`→`l2`.
+**v1.4.53:** Shop height CSS ladder **J > L > C > A** shipped.
+
+**v1.4.54:** L skin is now light/fair-warm on disk for idle, beer/coffee/cigarette holds, and the avatar (`right-full`, `right-hold-*`, `avatars/right.png`). Identity and outfit are unchanged. Cache busts are `HOLD_POSE_V=hold12` and avatar `?v=l2`.
 
 ## Shipped v1.4.49
 
-Full-body L (`right-*`) and C (`left-*`) idle + beer/coffee/cigarette holds are on disk under `public/chars/` and wired in `shopFigureSrc` (kind `"full"`). Cache bust `HOLD_POSE_V=hold11`.
+Full-body L (`right-*`) and C (`left-*`) idle + beer/coffee/cigarette holds are on disk under `public/chars/` and wired in `shopFigureSrc` (kind `"full"`). Current cache bust `HOLD_POSE_V=hold12` (v1.4.54).
 
 **Caveat:** C beer hold (`left-hold-beer.png`) may show the bottle in the **left** hand — acceptable for v1; re-gen later if needed.
 

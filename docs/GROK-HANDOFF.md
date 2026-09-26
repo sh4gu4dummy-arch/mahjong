@@ -44,10 +44,10 @@ Cache bust: bump `HOLD_POSE_V` when art changes, plus `VERSION`, `package.json`,
 
 **Shop branding (v1.4.45):** User-facing labels are **Shop** / `Shop · 钱包` (no Date, no ❤️). Do **not** translate Shop to 约会 unless the user asks.
 
-## Shop height / L skin (v1.4.53)
+## Shop height / L skin (v1.4.54)
 
-- Height ladder in `src/style.css`: **J > L > C > A** (center + side + mobile splits). A/J center numbers unchanged; L/C no longer share one rule.
-- L lighter-skin art regen **pending** Imagine on parent (executor has no `GenerateImage`). Current `public/chars/right-*.png` + `avatars/right.png` still medium-warm until parent re-gens.
+- **v1.4.53:** Height ladder in `src/style.css`: **J > L > C > A** (center + side + mobile splits). A/J center numbers unchanged; L/C no longer share one rule.
+- **v1.4.54:** L skin is now light/fair-warm on disk in `public/chars/right-*.png` and `public/avatars/right.png`; identity and outfit are unchanged. Art cache busts use `HOLD_POSE_V=hold12` and avatar `?v=l2`.
 
 ## Do not repeat (Face holds)
 

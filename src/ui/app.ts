@@ -317,7 +317,7 @@ function propEmoji(id: ShopPropId): string {
   return SHOP_ITEMS.find((x) => x.id === id)?.emoji ?? "";
 }
 
-const HOLD_POSE_V = "hold11";
+const HOLD_POSE_V = "hold12";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
   /* Face flip removed — A is always camera-facing; Away PNGs stay on disk for art history. */

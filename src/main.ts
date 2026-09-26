@@ -17,11 +17,11 @@ function registerAssetCache(): void {
 }
 
 function warmImages(): void {
-  const hold = "hold11";
+  const hold = "hold12";
   const urls = [
     "avatars/player.png?v=a1",
     "avatars/player-face.png?v=face7",
-    "avatars/right.png?v=l1",
+    "avatars/right.png?v=l2",
     "avatars/opposite.png?v=j2",
     "avatars/left.png?v=c2",
     "tiles/Back.png?v=png2",
