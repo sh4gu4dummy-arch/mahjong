@@ -18,7 +18,7 @@ Drafted 2026-09-25 for Ash. Repo previously had **no** create-from-scratch SOP; 
 Seat map (table): **0=A you, 1=L right, 2=J opp, 3=C left**.  
 Avatar refs: L = `public/avatars/right.png`, C = `public/avatars/left.png`.
 
-Height in UI (code): **J tallest**; L/C ≈ just under J (near A+ / not dwarfed); A petite. Side slots size L/C near center-A scale.
+Height in UI (code): **J > L > C > A** (clear steps). Desktop center: J 290/72vh/720, L 285/71vh/710, C 282/70vh/705, A 250/62vh/620. Side slots also keep J tallest (J 230/62vh/620 > L 225/60vh/600 > C 220/58vh/580 > A).
 
 ---
 
@@ -32,17 +32,17 @@ photorealistic, 3d render, plastic skin, western cartoon, chibi, oversized head,
 
 ## Character L (seat right · `avatars/right.png`)
 
-**Identity lock:** Young woman, **medium-warm brown skin**, large dark brown eyes, soft smile. **Dark brown / near-black wavy hair** in a **high voluminous ponytail** with a **sage-green scrunchie**; loose strands / side-bangs framing the face. Casual: **white crew-neck tee** under an **open sage-green collared shirt/light jacket**; dark jeans or soft olive trousers; simple white or sage sneakers. Friendly, approachable. Same art language as A/J full bodies (not flat avatar).
+**Identity lock:** Young woman, **light / light-warm / fair-warm skin** (not medium-warm brown/tan — noticeably lighter), large dark brown eyes, soft smile. **Dark brown / near-black wavy hair** in a **high voluminous ponytail** with a **sage-green scrunchie**; loose strands / side-bangs framing the face. Casual: **white crew-neck tee** under an **open sage-green collared shirt/light jacket**; dark jeans or soft olive trousers; simple white or sage sneakers. Friendly, approachable. Same art language as A/J full bodies (not flat avatar).
 
 ### L1 — idle full (`right-full.png`)
 ```
-Full-body 2D anime cel-shaded game character sprite of a young woman, standing facing camera, hands casually in jacket or pants pockets, medium-warm brown skin, large dark brown eyes, gentle closed-mouth smile, dark brown wavy hair in a high ponytail with sage-green scrunchie, side-bangs framing face, white crew-neck t-shirt under open sage-green collared shirt, olive or dark jeans cuffed at ankles, white sneakers, clean thin line art, soft cel shading, modern mobile-game character art matching AA Mahjong shop sprites, centered full figure head to toe, pure black background, transparent-cutout ready, 300x760
+Full-body 2D anime cel-shaded game character sprite of a young woman, standing facing camera, hands casually in jacket or pants pockets, LIGHT warm fair skin (not tan, not brown — lighter than medium), large dark brown eyes, gentle closed-mouth smile, dark brown wavy hair in a high ponytail with sage-green scrunchie, side-bangs framing face, white crew-neck t-shirt under open sage-green collared shirt, olive or dark jeans cuffed at ankles, white sneakers, clean thin line art, soft cel shading, modern mobile-game character art matching AA Mahjong shop sprites, centered full figure head to toe, pure black background, transparent-cutout ready, 300x760
 ```
 **Refs:** attach `avatars/right.png` (face lock) + `chars/opposite-full.png` or `player-face.png` (style/pose density). Strength: face high, body medium.
 
 ### L2 — hold beer (`right-hold-beer.png`)
 ```
-Same character and outfit as L idle: young woman medium-warm brown skin, high dark wavy ponytail sage scrunchie, white tee under open sage jacket. Standing full body facing camera. LEFT hand stays in pocket. RIGHT arm extended slightly forward/out of pocket, fingers wrapped around a small hand-sized amber beer bottle (realistic scale, not giant). Clean 2D anime cel-shade, thin lines, pure black background, 300x760, AA Mahjong shop hold pose
+Same character and outfit as L idle: young woman LIGHT warm fair skin (not tan), high dark wavy ponytail sage scrunchie, white tee under open sage jacket. Standing full body facing camera. LEFT hand stays in pocket. RIGHT arm extended slightly forward/out of pocket, fingers wrapped around a small hand-sized amber beer bottle (realistic scale, not giant). Clean 2D anime cel-shade, thin lines, pure black background, 300x760, AA Mahjong shop hold pose
 ```
 
 ### L3 — hold coffee (`right-hold-coffee.png`)
@@ -86,6 +86,10 @@ Same C character and outfit. Standing full body facing camera. RIGHT hand holdin
 
 
 ---
+
+## Pending art (v1.4.53 height shipped; skin regen blocked)
+
+**v1.4.53:** Shop height CSS ladder **J > L > C > A** shipped. L lighter-skin Imagine regen was **not** available on the executor (`GenerateImage` / CallDynamicTool parent-native only) — do **not** ship PIL fake bodies. Parent should re-run Imagine for L idle + holds + avatar (`right-full`, `right-hold-*`, `avatars/right.png`) with light/fair-warm skin, then bump `HOLD_POSE_V` hold11→hold12 and avatar `?v=l1`→`l2`.
 
 ## Shipped v1.4.49
 

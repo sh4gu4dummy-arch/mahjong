@@ -1955,7 +1955,7 @@ button { font-family: inherit; }
   user-select: none;
   pointer-events: none;
 }
-/* Height by character identity (not seat role) — A petite, J tallest, L/C ≈ J− */
+/* Height by character identity (not seat role) — J > L > C > A */
 .shop-char-full[data-char="A"] .shop-full {
   /* ~J shoulder height when feet aligned */
   width: min(250px, 32vw);
@@ -1971,12 +1971,19 @@ button { font-family: inherit; }
   object-fit: contain;
   object-position: bottom center;
 }
-.shop-char-full[data-char="L"] .shop-full,
+.shop-char-full[data-char="L"] .shop-full {
+  /* under J, above C */
+  width: min(285px, 35.5vw);
+  height: 71vh;
+  max-height: 710px;
+  object-fit: contain;
+  object-position: bottom center;
+}
 .shop-char-full[data-char="C"] .shop-full {
-  /* ~95% of J — L/C read near A+/J− when feet aligned */
-  width: min(280px, 35vw);
+  /* under L, above A */
+  width: min(282px, 35vw);
   height: 70vh;
-  max-height: 700px;
+  max-height: 705px;
   object-fit: contain;
   object-position: bottom center;
 }
@@ -1986,9 +1993,11 @@ button { font-family: inherit; }
 .shop-char-full[data-char="J"] .shop-char-body {
   width: min(290px, 36vw);
 }
-.shop-char-full[data-char="L"] .shop-char-body,
+.shop-char-full[data-char="L"] .shop-char-body {
+  width: min(285px, 35.5vw);
+}
 .shop-char-full[data-char="C"] .shop-char-body {
-  width: min(280px, 35vw);
+  width: min(282px, 35vw);
 }
 .shop-char-label { display: none !important; }
 .shop-char-body .hand-prop {
@@ -2151,9 +2160,9 @@ button { font-family: inherit; }
   }
   .shop-char-full[data-char="A"] { max-width: min(148px, 40vw); }
   .shop-char-full[data-char="J"] { max-width: min(168px, 46vw); }
-  .shop-char-full[data-char="L"],
-  .shop-char-full[data-char="C"] { max-width: min(162px, 44vw); }
-  /* A petite / J tallest / L·C ≈ J−; feet aligned (flex-end). */
+  .shop-char-full[data-char="L"] { max-width: min(164px, 45vw); }
+  .shop-char-full[data-char="C"] { max-width: min(160px, 43vw); }
+  /* J > L > C > A; feet aligned (flex-end). */
   .shop-char-full[data-char="A"] .shop-char-body {
     width: min(140px, 38vw);
     max-height: none;
@@ -2164,9 +2173,13 @@ button { font-family: inherit; }
     max-height: none;
     height: auto;
   }
-  .shop-char-full[data-char="L"] .shop-char-body,
+  .shop-char-full[data-char="L"] .shop-char-body {
+    width: min(157px, 43vw);
+    max-height: none;
+    height: auto;
+  }
   .shop-char-full[data-char="C"] .shop-char-body {
-    width: min(155px, 42vw);
+    width: min(153px, 41vw);
     max-height: none;
     height: auto;
   }
@@ -2186,11 +2199,18 @@ button { font-family: inherit; }
     object-position: bottom center;
     image-rendering: auto;
   }
-  .shop-char-full[data-char="L"] .shop-full,
-  .shop-char-full[data-char="C"] .shop-full {
-    width: min(155px, 42vw);
+  .shop-char-full[data-char="L"] .shop-full {
+    width: min(157px, 43vw);
     height: auto;
-    max-height: min(54vh, 390px);
+    max-height: min(55vh, 395px);
+    object-fit: contain;
+    object-position: bottom center;
+    image-rendering: auto;
+  }
+  .shop-char-full[data-char="C"] .shop-full {
+    width: min(153px, 41vw);
+    height: auto;
+    max-height: min(54vh, 388px);
     object-fit: contain;
     object-position: bottom center;
     image-rendering: auto;
@@ -2410,7 +2430,7 @@ button { font-family: inherit; }
   padding-left: max(4px, var(--safe-left));
   padding-right: max(4px, var(--safe-right));
 }
-/* Side slots: L/C sized near center-A scale (not dwarfed vs you/opp); J still tallest.
+/* Side slots: J > L > C > A (J tallest on sides too).
    Slightly narrower max-width so sides don't dominate the stage. */
 .shop-char-full.side-left,
 .shop-char-full.side-right {
@@ -2425,10 +2445,12 @@ button { font-family: inherit; }
   max-width: min(230px, 28vw);
 }
 .shop-char-full.side-left[data-char="L"],
-.shop-char-full.side-right[data-char="L"],
+.shop-char-full.side-right[data-char="L"] {
+  max-width: min(225px, 28vw);
+}
 .shop-char-full.side-left[data-char="C"],
 .shop-char-full.side-right[data-char="C"] {
-  max-width: min(225px, 28vw);
+  max-width: min(220px, 27vw);
 }
 .shop-char-full.side-left[data-char="A"] .shop-char-body,
 .shop-char-full.side-right[data-char="A"] .shop-char-body {
@@ -2439,10 +2461,12 @@ button { font-family: inherit; }
   width: min(230px, 28vw);
 }
 .shop-char-full.side-left[data-char="L"] .shop-char-body,
-.shop-char-full.side-right[data-char="L"] .shop-char-body,
+.shop-char-full.side-right[data-char="L"] .shop-char-body {
+  width: min(225px, 28vw);
+}
 .shop-char-full.side-left[data-char="C"] .shop-char-body,
 .shop-char-full.side-right[data-char="C"] .shop-char-body {
-  width: min(225px, 28vw);
+  width: min(220px, 27vw);
 }
 .shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
@@ -2453,17 +2477,20 @@ button { font-family: inherit; }
 .shop-char-full.side-left[data-char="J"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-right[data-char="J"] .shop-full:not(.shop-portrait) {
   width: min(230px, 28vw);
+  height: 62vh;
+  max-height: 620px;
+}
+.shop-char-full.side-left[data-char="L"] .shop-full:not(.shop-portrait),
+.shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait) {
+  width: min(225px, 28vw);
   height: 60vh;
   max-height: 600px;
 }
-.shop-char-full.side-left[data-char="L"] .shop-full:not(.shop-portrait),
-.shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
 .shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
-  /* Match center-A visual scale (62vh/620) at side seats */
-  width: min(225px, 28vw);
-  height: 62vh;
-  max-height: 620px;
+  width: min(220px, 27vw);
+  height: 58vh;
+  max-height: 580px;
 }
 .shop-char-body.portrait {
   align-items: center;
@@ -2522,9 +2549,9 @@ button { font-family: inherit; }
   .shop-char-full.side-left[data-char="J"],
   .shop-char-full.side-right[data-char="J"] { max-width: min(114px, 30vw); }
   .shop-char-full.side-left[data-char="L"],
-  .shop-char-full.side-right[data-char="L"],
+  .shop-char-full.side-right[data-char="L"] { max-width: min(110px, 29vw); }
   .shop-char-full.side-left[data-char="C"],
-  .shop-char-full.side-right[data-char="C"] { max-width: min(112px, 29vw); }
+  .shop-char-full.side-right[data-char="C"] { max-width: min(106px, 28vw); }
   .shop-char-full.side-left[data-char="A"] .shop-char-body,
   .shop-char-full.side-right[data-char="A"] .shop-char-body {
     width: min(94px, 24vw);
@@ -2534,10 +2561,12 @@ button { font-family: inherit; }
     width: min(108px, 28vw);
   }
   .shop-char-full.side-left[data-char="L"] .shop-char-body,
-  .shop-char-full.side-right[data-char="L"] .shop-char-body,
+  .shop-char-full.side-right[data-char="L"] .shop-char-body {
+    width: min(104px, 27vw);
+  }
   .shop-char-full.side-left[data-char="C"] .shop-char-body,
   .shop-char-full.side-right[data-char="C"] .shop-char-body {
-    width: min(106px, 27vw);
+    width: min(100px, 26vw);
   }
   .shop-char-full.side-left[data-char="A"] .shop-full:not(.shop-portrait),
   .shop-char-full.side-right[data-char="A"] .shop-full:not(.shop-portrait) {
@@ -2552,12 +2581,16 @@ button { font-family: inherit; }
     max-height: min(48vh, 340px);
   }
   .shop-char-full.side-left[data-char="L"] .shop-full:not(.shop-portrait),
-  .shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait),
+  .shop-char-full.side-right[data-char="L"] .shop-full:not(.shop-portrait) {
+    width: min(104px, 27vw);
+    height: auto;
+    max-height: min(46vh, 330px);
+  }
   .shop-char-full.side-left[data-char="C"] .shop-full:not(.shop-portrait),
   .shop-char-full.side-right[data-char="C"] .shop-full:not(.shop-portrait) {
-    width: min(106px, 27vw);
+    width: min(100px, 26vw);
     height: auto;
-    max-height: min(47vh, 335px);
+    max-height: min(44vh, 318px);
   }
   .shop-char-full.side-left .shop-full.shop-portrait,
   .shop-char-full.side-right .shop-full.shop-portrait {
