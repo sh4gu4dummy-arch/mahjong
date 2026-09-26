@@ -18,7 +18,7 @@ export interface CharDef {
 }
 
 export const CHAR_DEFS: Record<CharId, CharDef> = {
-  A: { id: "A", letter: "A", avatarSrc: "avatars/player.png?v=a1", body: "player" },
+  A: { id: "A", letter: "A", avatarSrc: "avatars/player-face.png?v=face7", body: "player" },
   L: { id: "L", letter: "L", avatarSrc: "avatars/right.png?v=l1", body: "portrait" },
   J: { id: "J", letter: "J", avatarSrc: "avatars/opposite.png?v=j2", body: "opposite" },
   C: { id: "C", letter: "C", avatarSrc: "avatars/left.png?v=c2", body: "portrait" },

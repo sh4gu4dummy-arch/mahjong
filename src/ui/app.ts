@@ -320,11 +320,11 @@ function propEmoji(id: ShopPropId): string {
 const HOLD_POSE_V = "hold11";
 
 function playerFullSrc(prop?: ShopPropId | null): string {
-  /* A face-flip toggle removed — always use away/back art (face PNGs kept on disk). */
-  if (prop === "cigarette") return `chars/player-hold-cigarette.png?v=${HOLD_POSE_V}`;
-  if (prop === "beer") return `chars/player-hold-beer.png?v=${HOLD_POSE_V}`;
-  if (prop === "coffee") return `chars/player-hold-coffee.png?v=${HOLD_POSE_V}`;
-  return "chars/player-full.png?v=cut3";
+  /* Face flip removed — A is always camera-facing; Away PNGs stay on disk for art history. */
+  if (prop === "cigarette") return `chars/player-hold-cigarette-face.png?v=${HOLD_POSE_V}`;
+  if (prop === "beer") return `chars/player-hold-beer-face.png?v=${HOLD_POSE_V}`;
+  if (prop === "coffee") return `chars/player-hold-coffee-face.png?v=${HOLD_POSE_V}`;
+  return `chars/player-face.png?v=${HOLD_POSE_V}`;
 }
 
 function oppositeFullSrc(prop?: ShopPropId | null): string {

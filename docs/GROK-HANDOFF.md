@@ -29,16 +29,16 @@ Never paste API tokens into chat. Never deploy uncommitted WIP.
 
 ## What shipped (Face / Date)
 
-A Face (camera) art still on disk (identity lock / future use):
+A Face (camera) art retained on disk and used by the UI:
 
 - `public/chars/player-hold-beer-face.png`
 - `public/chars/player-hold-coffee-face.png`
 - `public/chars/player-hold-cigarette-face.png`
 - Idle Face A: `public/chars/player-face.png` (280×720 RGBA pullover, hands in pocket).
 
-**v1.4.50:** shop + dock **face-flip toggle removed**. UI always shows Away/back A (`player-full` / `player-hold-*`, avatar `avatars/player.png`). Face PNGs kept; no `getAFace` / localStorage toggle.
+**v1.4.52 rule:** no face-flip toggle; A always faces the camera in shop + dock. The UI uses `player-face.png`, `player-hold-{beer,coffee,cigarette}-face.png`, and avatar `avatars/player-face.png`. Away/back PNGs remain on disk for art history only; no `getAFace`, flip button, flip localStorage, or face-flip i18n.
 
-Away (back) holds: `player-hold-{beer,coffee,cigarette}.png` and opposite-male holds.
+Away (back) holds: `player-hold-{beer,coffee,cigarette}.png` and opposite-male holds; these are unused by the UI.
 
 Cache bust: bump `HOLD_POSE_V` when art changes, plus `VERSION`, `package.json`, `src/version.ts`, `public/sw.js` + `play/sw.js` `CACHE` together. SW uses `ignoreSearch: true`.
 

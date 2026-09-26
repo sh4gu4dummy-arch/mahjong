@@ -2017,7 +2017,7 @@ button { font-family: inherit; }
   bottom: 49%;
 }
 .shop-char-full[data-char="A"] .shop-char-body .hand-prop {
-  /* A is facing away — prop at right hand */
+  /* A faces camera — keep prop at screen-right / right hand */
   right: 6%;
   left: auto;
   bottom: 46%;
