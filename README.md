@@ -6,15 +6,15 @@ Win legality still uses Northeast table constraints (刻/将 · 幺九 · 三门
 
 ## Play locally (simplest)
 
-Open this file in your browser (double-click, or File → Open):
+Open this file at the repo root in your browser (double-click, or File → Open):
 
 ```
-play/index.html
+Open AA Mahjong.html
 ```
 
-No Node, no build step — just open it. Assets load relatively from the `play/` folder.
+No Node, no build step — just open it. The launcher opens the committed static build under `play/`.
 
-> Tip: keep the whole `play/` folder together. Opening only a copy of `index.html` without its sibling assets won’t work.
+> Tip: keep the whole repo (including the `play/` folder and its sibling assets) together. Opening only a copy of the launcher or `play/index.html` without those assets won’t work.
 
 Rebuild the committed play folder after code/asset changes:
 
